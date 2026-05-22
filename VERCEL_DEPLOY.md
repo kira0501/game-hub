@@ -25,6 +25,7 @@ SESSION_DRIVER=database
 CACHE_STORE=database
 QUEUE_CONNECTION=database
 FILESYSTEM_DISK=public
+VIEW_COMPILED_PATH=/tmp/game-hub/storage/framework/views
 ```
 
 `APP_KEY` можно взять из локального `.env` или создать командой:
