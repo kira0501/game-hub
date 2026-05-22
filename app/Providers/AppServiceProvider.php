@@ -18,7 +18,9 @@ class AppServiceProvider extends ServiceProvider
         Model::preventLazyLoading(! app()->isProduction());
 
         if (! app()->runningInConsole()) {
-            $baseUrl = request()->getSchemeAndHttpHost();
+            $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? null;
+            $scheme = getenv('VERCEL') ? 'https' : request()->getScheme();
+            $baseUrl = $host ? $scheme.'://'.$host : request()->getSchemeAndHttpHost();
             $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
 
             if (str_starts_with($scriptName, '/laravel1/')) {
@@ -26,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
             }
 
             URL::forceRootUrl($baseUrl);
+            URL::forceScheme($scheme);
         }
     }
 }
