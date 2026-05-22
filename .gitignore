@@ -1,5 +1,6 @@
 /node_modules
 /vendor
+bootstrap/cache/*.php
 /.env
 /.env.backup
 /.phpunit.result.cache
