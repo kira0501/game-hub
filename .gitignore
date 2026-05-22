@@ -1,6 +1,7 @@
 /node_modules
 /vendor
-bootstrap/cache/*.php
+/bootstrap/cache/*.php
+!/bootstrap/cache/.gitkeep
 /.env
 /.env.backup
 /.phpunit.result.cache
