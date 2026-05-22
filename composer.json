@@ -46,7 +46,8 @@
         ],
         "vercel": [
             "npm ci",
-            "npm run build"
+            "npm run build",
+            "@php scripts/build-vercel-database.php"
         ]
     },
     "extra": {

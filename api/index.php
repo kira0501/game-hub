@@ -10,6 +10,7 @@ require __DIR__.'/../vendor/autoload.php';
 $tmpRoot = '/tmp/game-hub';
 $tmpViewPath = $tmpRoot.'/storage/framework/views';
 $tmpDatabasePath = $tmpRoot.'/database.sqlite';
+$packagedDatabasePath = __DIR__.'/../database/vercel.sqlite';
 $useTmpSqlite = getenv('VERCEL') && ! getenv('DB_HOST') && ! getenv('DB_URL');
 
 foreach ([
@@ -27,8 +28,15 @@ $_ENV['VIEW_COMPILED_PATH'] = $tmpViewPath;
 $_SERVER['VIEW_COMPILED_PATH'] = $tmpViewPath;
 
 if ($useTmpSqlite) {
+    $databaseReady = false;
+
     if (! file_exists($tmpDatabasePath)) {
-        touch($tmpDatabasePath);
+        if (file_exists($packagedDatabasePath)) {
+            copy($packagedDatabasePath, $tmpDatabasePath);
+            $databaseReady = true;
+        } else {
+            touch($tmpDatabasePath);
+        }
     }
 
     foreach ([
@@ -46,7 +54,7 @@ if ($useTmpSqlite) {
 
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
-if ($useTmpSqlite && ! file_exists($tmpRoot.'/.database-ready')) {
+if ($useTmpSqlite && ! $databaseReady && ! file_exists($tmpRoot.'/.database-ready')) {
     $app->make(ConsoleKernel::class)->call('migrate:fresh', [
         '--seed' => true,
         '--force' => true,
