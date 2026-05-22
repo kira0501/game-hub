@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html,
+    body {
+        overflow-x: hidden;
+    }
+
+    body {
+        @apply bg-hub-bg text-slate-100 antialiased;
+    }
+
+    img,
+    video,
+    iframe {
+        max-width: 100%;
+    }
+}
+
+@layer components {
+    .hub-container {
+        @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+    }
+
+    .hub-panel {
+        @apply rounded-lg border border-white/10 bg-hub-panel shadow-xl shadow-black/20;
+    }
+
+    .hub-input {
+        @apply w-full rounded-md border-white/10 bg-black/30 text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400;
+    }
+
+    .hub-select {
+        @apply w-full rounded-md border border-white/10 bg-slate-950/80 px-3 py-2 text-slate-100 shadow-inner shadow-black/30 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400;
+        color-scheme: dark;
+    }
+
+    .hub-select option {
+        @apply bg-slate-950 text-slate-100;
+    }
+
+    .hub-btn {
+        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-300;
+    }
+
+    .hub-btn-secondary {
+        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-white/10;
+    }
+
+    .hub-label {
+        @apply text-sm font-medium text-slate-300;
+    }
+}
+
+@media (hover: none) {
+    .group:hover {
+        transform: none;
+    }
+}
