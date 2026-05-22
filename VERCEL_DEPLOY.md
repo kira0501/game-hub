@@ -43,7 +43,19 @@ php artisan migrate:fresh --seed
 
 Для этого локальный `.env` временно можно переключить на внешнюю MySQL, выполнить команду, а потом вернуть локальные настройки.
 
-## 3. Деплой
+## 3. Настройки проекта в Vercel
+
+В настройках импорта проекта:
+
+- Application Preset: `Other`
+- Root Directory: `./`
+- Build Command: оставить пустым
+- Output Directory: оставить пустым
+- Install Command: оставить пустым
+
+`composer install` вручную в Build Command писать не нужно. Runtime `vercel-php` сам устанавливает Composer-зависимости, а Vite-сборка запускается через composer script `vercel`.
+
+## 4. Деплой
 
 Установи и запусти Vercel CLI:
 
@@ -59,7 +71,7 @@ vercel
 vercel --prod
 ```
 
-## 4. Проверка
+## 5. Проверка
 
 После деплоя открой:
 
