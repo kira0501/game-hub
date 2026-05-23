@@ -18,7 +18,9 @@
 
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         @foreach($rows as $row)
-            @php($game = $row['game'])
+            @php
+                $game = $row['game'];
+            @endphp
             <article class="hub-panel overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-cyan-300/60 hover:shadow-[0_0_28px_rgba(34,211,238,0.18)]">
                 <a href="{{ route('games.show', $game->slug) }}" class="grid h-full sm:grid-cols-[150px_1fr]">
                     <div class="aspect-[3/4] bg-slate-900 sm:h-full sm:aspect-auto">

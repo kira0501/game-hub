@@ -23,7 +23,9 @@
 
     <div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         @foreach($recommendations as $item)
-            @php($game = $item['game'])
+            @php
+                $game = $item['game'];
+            @endphp
             <article class="hub-panel overflow-hidden">
                 <a href="{{ route('games.show', $game->slug) }}" class="grid h-full min-[430px]:grid-cols-[140px_1fr] sm:grid-cols-[160px_1fr]">
                     <img src="{{ $game->cover }}" alt="{{ $game->title }}" class="h-64 w-full object-cover object-top min-[430px]:h-full">

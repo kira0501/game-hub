@@ -95,7 +95,9 @@
         <div class="hub-panel p-3 md:p-4">
             <div id="game-media-viewer" class="space-y-3">
                 <div class="overflow-hidden rounded bg-black">
-                    @php($firstMedia = $mediaItems->first())
+                    @php
+                        $firstMedia = $mediaItems->first();
+                    @endphp
                     @if($firstMedia?->type === 'video')
                         <iframe id="media-main-video" class="aspect-video w-full {{ \Illuminate\Support\Str::contains($firstMedia->url, ['.mp4', '.webm', '.m3u8']) ? 'hidden' : '' }}" src="{{ \Illuminate\Support\Str::contains($firstMedia->url, ['.mp4', '.webm', '.m3u8']) ? '' : $firstMedia->url }}" allowfullscreen></iframe>
                         <video id="media-main-file" class="{{ \Illuminate\Support\Str::contains($firstMedia->url, ['.mp4', '.webm', '.m3u8']) ? '' : 'hidden' }} aspect-video w-full bg-black" src="{{ \Illuminate\Support\Str::contains($firstMedia->url, ['.mp4', '.webm', '.m3u8']) ? $firstMedia->url : '' }}" controls playsinline></video>
@@ -198,7 +200,9 @@
                 <button type="button" class="similar-arrow similar-prev">‹</button>
                 <div class="similar-track flex max-w-full gap-3 overflow-x-auto scroll-smooth pb-5">
                     @foreach($similar as $item)
-                        @php($best = $item->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first())
+                        @php
+                            $best = $item->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first();
+                        @endphp
                         <a href="{{ route('games.show', $item->slug) }}" class="min-w-[170px] overflow-hidden rounded bg-black/30 transition hover:-translate-y-1 sm:min-w-[220px]">
                             <img src="{{ $cardCover($item) }}" alt="{{ $item->title }}" class="h-24 w-full object-cover object-top sm:h-28">
                             <div class="flex items-center justify-between gap-3 p-3">

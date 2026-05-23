@@ -32,7 +32,9 @@
                 <div class="steam-carousel-title">Популярное и рекомендуемое</div>
                 <div class="steam-carousel-frame">
                     @foreach($popularGames->take(6)->values() as $index => $game)
-                        @php($best = $game->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first())
+                        @php
+                            $best = $game->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first();
+                        @endphp
                         <article class="hero-slide {{ $index === 0 ? 'is-active' : '' }}" data-slide="{{ $index }}">
                             <div class="steam-slide-grid">
                                 <a href="{{ route('games.show', $game->slug) }}" class="steam-slide-image-link">
@@ -136,7 +138,9 @@
             </div>
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 @foreach($dealGames as $game)
-                    @php($best = $game->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first())
+                    @php
+                        $best = $game->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first();
+                    @endphp
                     <a href="{{ route('games.show', $game->slug) }}" class="hub-panel group flex h-full min-h-[330px] flex-col overflow-hidden transition hover:-translate-y-1 hover:border-cyan-300/50 hover:shadow-[0_0_28px_rgba(34,211,238,0.22)]">
                         <div class="aspect-video overflow-hidden bg-slate-900">
                             <img src="{{ $coverImage($game) }}" class="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105" alt="{{ $game->title }}">

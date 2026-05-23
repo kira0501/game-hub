@@ -1,7 +1,9 @@
 @extends('layouts.admin')
 
 @section('content')
-@php($req = $game->systemRequirement)
+@php
+    $req = $game->systemRequirement;
+@endphp
 <h1 class="text-3xl font-black">{{ $game->exists ? 'Редактировать игру' : 'Создать игру' }}</h1>
 <form method="POST" action="{{ $game->exists ? route('admin.games.update',$game) : route('admin.games.store') }}" class="mt-6 grid gap-6">@csrf @if($game->exists) @method('PUT') @endif
     <div class="rounded-lg border border-white/10 bg-white/5 p-5 grid gap-4 md:grid-cols-2">
