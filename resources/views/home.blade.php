@@ -2,21 +2,28 @@
 
 @section('content')
 @php
+    $placeholderWide = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1600&q=80';
+    $placeholderCover = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=900&q=80';
+    $galleryImages = fn ($game) => $game->media->where('type', 'image')->where('role', 'gallery')->values();
     $mediaImage = fn ($game) => $game->hero_image
-        ?: $game->media->firstWhere('type', 'image')?->url
+        ?: $galleryImages($game)->first()?->url
         ?: $game->cover
-        ?: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80';
+        ?: $placeholderWide;
     $carouselImage = fn ($game) => $game->carousel_image ?: $game->hero_image ?: $mediaImage($game);
     $coverImage = fn ($game) => $game->cover
-        ?: $mediaImage($game);
-    $mediaImages = fn ($game) => $game->media->where('type', 'image')->take(4)->values();
+        ?: $placeholderCover;
+    $mediaImages = fn ($game) => $galleryImages($game)
+        ->reject(fn ($media) => in_array($media->url, array_filter([$game->cover, $game->hero_image, $game->carousel_image]), true))
+        ->take(4)
+        ->values();
     $priceLabel = fn ($price) => $price ? ((float) $price->price === 0.0 ? 'Бесплатно' : number_format((float) $price->price, 0, '.', ' ') . ' ' . $price->currency) : 'Нет цены';
     $smartGame = $recommended->first()['game'] ?? $popularGames->first();
     $smartBest = $smartGame?->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first();
+    $heroGames = ($carouselGames ?? collect())->isNotEmpty() ? $carouselGames : $popularGames;
 @endphp
 <section class="relative overflow-hidden border-b border-white/10">
     <div class="absolute inset-0">
-        <img id="home-hero-bg" src="{{ $popularGames->first() ? $carouselImage($popularGames->first()) : 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1800&q=80' }}" class="h-full w-full object-cover opacity-30 transition duration-700" alt="">
+        <img id="home-hero-bg" src="{{ $heroGames->first() ? $carouselImage($heroGames->first()) : $placeholderWide }}" class="h-full w-full object-cover opacity-30 transition duration-700" alt="">
         <div class="absolute inset-0 bg-gradient-to-r from-hub-bg via-hub-bg/85 to-hub-bg/50"></div>
         <div class="absolute inset-0 bg-black/25"></div>
     </div>
@@ -30,23 +37,24 @@
                 <a href="{{ route('prices.compare') }}" class="hub-btn-secondary">Скидки и цены</a>
             </div>
         </div>
-        @if($popularGames->count())
+        @if($heroGames->count())
             <div class="steam-carousel" id="hero-carousel">
                 <div class="steam-carousel-title">Популярное и рекомендуемое</div>
                 <div class="steam-carousel-frame">
-                    @foreach($popularGames->take(6)->values() as $index => $game)
+                    @foreach($heroGames->take(6)->values() as $index => $game)
                         @php
                             $best = $game->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first();
+                            $defaultSlideImage = $carouselImage($game);
                         @endphp
-                        <article class="hero-slide {{ $index === 0 ? 'is-active' : '' }}" data-slide="{{ $index }}" data-bg="{{ $carouselImage($game) }}">
+                        <article class="hero-slide {{ $index === 0 ? 'is-active' : '' }}" data-slide="{{ $index }}" data-bg="{{ $defaultSlideImage }}" data-default-image="{{ $defaultSlideImage }}">
                             <div class="steam-slide-grid">
                                 <a href="{{ route('games.show', $game->slug) }}" class="steam-slide-image-link">
-                                    <img src="{{ $carouselImage($game) }}" class="steam-slide-image" alt="{{ $game->title }}" data-main-slide-image>
+                                    <img src="{{ $defaultSlideImage }}" class="steam-slide-image" alt="{{ $game->title }}" data-main-slide-image>
                                 </a>
                                 <div class="steam-slide-info">
                                     <div class="steam-thumbs">
                                         @foreach($mediaImages($game) as $thumbIndex => $thumb)
-                                            <button type="button" class="steam-thumb-button {{ $thumbIndex === 0 ? 'is-active' : '' }}" data-thumb-url="{{ $thumb->url }}">
+                                            <button type="button" class="steam-thumb-button" data-thumb-url="{{ $thumb->url }}">
                                                 <img src="{{ $thumb->url }}" alt="{{ $game->title }}">
                                             </button>
                                         @endforeach
@@ -68,7 +76,7 @@
                     <button type="button" data-carousel-next class="steam-arrow steam-arrow-right" aria-label="Следующий слайд">›</button>
                 </div>
                 <div class="steam-dots">
-                    @foreach($popularGames->take(6)->values() as $index => $game)
+                    @foreach($heroGames->take(6)->values() as $index => $game)
                         <button type="button" data-carousel-dot="{{ $index }}" class="{{ $index === 0 ? 'is-active' : '' }}" aria-label="Слайд {{ $index + 1 }}"></button>
                     @endforeach
                 </div>
@@ -478,6 +486,7 @@
             active = (index + slides.length) % slides.length;
             slides.forEach((slide, slideIndex) => {
                 slide.classList.toggle('is-active', slideIndex === active);
+                resetSlide(slide);
             });
             dots.forEach((dot, dotIndex) => {
                 dot.classList.toggle('is-active', dotIndex === active);
@@ -486,19 +495,50 @@
             if (bg && slides[active]?.dataset.bg) bg.src = slides[active].dataset.bg;
         }
 
+        function resetSlide(slide) {
+            if (!slide) return;
+
+            const mainImage = slide.querySelector('[data-main-slide-image]');
+            if (mainImage && slide.dataset.defaultImage) {
+                mainImage.src = slide.dataset.defaultImage;
+            }
+
+            slide.dataset.lockedPreview = '';
+            slide.querySelectorAll('.steam-thumb-button').forEach((item) => item.classList.remove('is-active'));
+        }
+
+        function previewThumb(thumb, shouldLock = false) {
+            const slide = thumb.closest('.hero-slide');
+            const mainImage = slide?.querySelector('[data-main-slide-image]');
+            if (!slide || !mainImage) return;
+
+            slide.querySelectorAll('.steam-thumb-button').forEach((item) => item.classList.remove('is-active'));
+            thumb.classList.add('is-active');
+            mainImage.src = thumb.dataset.thumbUrl;
+
+            if (shouldLock) {
+                slide.dataset.lockedPreview = thumb.dataset.thumbUrl;
+            }
+        }
+
         carousel.querySelectorAll('.steam-thumb-button').forEach((thumb) => {
-            const activateThumb = () => {
+            thumb.addEventListener('mouseenter', () => previewThumb(thumb));
+            thumb.addEventListener('mouseleave', () => {
                 const slide = thumb.closest('.hero-slide');
                 const mainImage = slide?.querySelector('[data-main-slide-image]');
                 if (!slide || !mainImage) return;
 
-                slide.querySelectorAll('.steam-thumb-button').forEach((item) => item.classList.remove('is-active'));
-                thumb.classList.add('is-active');
-                mainImage.src = thumb.dataset.thumbUrl;
-            };
+                if (slide.dataset.lockedPreview) {
+                    mainImage.src = slide.dataset.lockedPreview;
+                    slide.querySelectorAll('.steam-thumb-button').forEach((item) => {
+                        item.classList.toggle('is-active', item.dataset.thumbUrl === slide.dataset.lockedPreview);
+                    });
+                    return;
+                }
 
-            thumb.addEventListener('mouseenter', activateThumb);
-            thumb.addEventListener('click', activateThumb);
+                resetSlide(slide);
+            });
+            thumb.addEventListener('click', () => previewThumb(thumb, true));
         });
 
         function start() {

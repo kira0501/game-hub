@@ -2,7 +2,9 @@
 
 @section('content')
 @php
-    $cover = $game->cover ?: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80';
+    $placeholderWide = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1600&q=80';
+    $placeholderCover = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=900&q=80';
+    $cover = $game->cover ?: $placeholderCover;
     $approvedReviews = $game->reviews->where('status', 'approved');
     $positiveReviews = $approvedReviews->where('rating', '>=', 7)->count();
     $negativeReviews = $approvedReviews->where('rating', '<', 7)->count();
@@ -13,15 +15,17 @@
     $recentTotal = $recentReviews->count();
     $recentPositive = $recentReviews->where('rating', '>=', 7)->count();
     $recentPercent = $recentTotal ? round($recentPositive / $recentTotal * 100) : $positivePercent;
-    $mediaItems = $game->media->sortBy('sort_order')->values();
-    $displayCover = $game->hero_image ?: $mediaItems->firstWhere('type', 'image')?->url ?: $cover;
+    $mediaItems = $game->media->where('role', 'gallery')->sortBy('sort_order')->values();
+    $galleryImages = $mediaItems->where('type', 'image')->values();
+    $mainMediaImage = $game->hero_image ?: $galleryImages->first()?->url ?: $placeholderWide;
+    $sidebarImage = $game->carousel_image ?: $game->cover ?: $placeholderWide;
+    $heroBackground = $game->carousel_image ?: $game->hero_image ?: $placeholderWide;
     $visibleReviews = auth()->user()?->isAdmin() ? $game->reviews : $approvedReviews;
     $mediaImage = fn ($item) => $item->media->firstWhere('type', 'image')?->url
         ?: $item->cover
-        ?: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80';
+        ?: $placeholderWide;
     $cardCover = fn ($item) => $item->cover
-        ?: $item->media->firstWhere('type', 'image')?->url
-        ?: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=900&q=80';
+        ?: $placeholderCover;
     $featureLabels = [
         'single_player' => ['icon' => '♟', 'label' => 'Для одного игрока'],
         'pvp_online' => ['icon' => '⚔', 'label' => 'Игрок против игрока (по сети)'],
@@ -45,7 +49,7 @@
 
 <section class="relative border-b border-white/10">
     <div class="absolute inset-0">
-        <img src="{{ $displayCover }}" class="h-full w-full object-cover opacity-25" alt="">
+        <img src="{{ $heroBackground }}" class="h-full w-full object-cover opacity-25" alt="">
         <div class="absolute inset-0 bg-gradient-to-t from-hub-bg via-hub-bg/90 to-hub-bg/50"></div>
     </div>
     <div class="hub-container relative py-6 md:py-8">
@@ -96,33 +100,24 @@
         <div class="hub-panel p-3 md:p-4">
             <div id="game-media-viewer" class="space-y-3">
                 <div class="overflow-hidden rounded bg-black">
-                    @php
-                        $firstMedia = $mediaItems->first();
-                    @endphp
-                    @if($firstMedia?->type === 'video')
-                        <iframe id="media-main-video" class="aspect-video w-full {{ \Illuminate\Support\Str::contains($firstMedia->url, ['.mp4', '.webm', '.m3u8']) ? 'hidden' : '' }}" src="{{ \Illuminate\Support\Str::contains($firstMedia->url, ['.mp4', '.webm', '.m3u8']) ? '' : $firstMedia->url }}" allowfullscreen></iframe>
-                        <video id="media-main-file" class="{{ \Illuminate\Support\Str::contains($firstMedia->url, ['.mp4', '.webm', '.m3u8']) ? '' : 'hidden' }} aspect-video w-full bg-black" src="{{ \Illuminate\Support\Str::contains($firstMedia->url, ['.mp4', '.webm', '.m3u8']) ? $firstMedia->url : '' }}" controls playsinline></video>
-                        <img id="media-main-image" class="hidden aspect-video w-full object-cover" src="" alt="">
-                    @else
-                        <iframe id="media-main-video" class="hidden aspect-video w-full" src="" allowfullscreen></iframe>
-                        <video id="media-main-file" class="hidden aspect-video w-full bg-black" src="" controls playsinline></video>
-                        <img id="media-main-image" class="aspect-video w-full object-cover" src="{{ $firstMedia?->url ?? $cover }}" alt="{{ $game->title }}">
-                    @endif
+                    <iframe id="media-main-video" class="hidden aspect-video w-full" src="" allowfullscreen></iframe>
+                    <video id="media-main-file" class="hidden aspect-video w-full bg-black" src="" controls playsinline></video>
+                    <img id="media-main-image" class="aspect-video w-full object-cover" src="{{ $mainMediaImage }}" alt="{{ $game->title }}">
                 </div>
                 <div class="flex max-w-full gap-2 overflow-x-auto pb-2">
-                    @forelse($mediaItems as $index => $media)
-                        <button type="button" class="media-thumb {{ $index === 0 ? 'ring-2 ring-cyan-300' : '' }} h-16 min-w-28 overflow-hidden rounded bg-slate-900 sm:h-20 sm:min-w-36" data-type="{{ $media->type }}" data-url="{{ $media->url }}" data-file-video="{{ $media->type === 'video' && \Illuminate\Support\Str::contains($media->url, ['.mp4', '.webm', '.m3u8']) ? '1' : '0' }}">
+                    <button type="button" class="media-thumb ring-2 ring-cyan-300 h-16 min-w-28 overflow-hidden rounded bg-slate-900 sm:h-20 sm:min-w-36" data-type="image" data-url="{{ $mainMediaImage }}" data-file-video="0">
+                        <img src="{{ $mainMediaImage }}" alt="" class="h-full w-full object-cover">
+                    </button>
+                    @foreach($mediaItems as $media)
+                        @continue($media->type === 'image' && $media->url === $mainMediaImage)
+                        <button type="button" class="media-thumb h-16 min-w-28 overflow-hidden rounded bg-slate-900 sm:h-20 sm:min-w-36" data-type="{{ $media->type }}" data-url="{{ $media->url }}" data-file-video="{{ $media->type === 'video' && \Illuminate\Support\Str::contains($media->url, ['.mp4', '.webm', '.m3u8']) ? '1' : '0' }}">
                             @if($media->type === 'video')
                                 <div class="grid h-full w-full place-items-center bg-black/70 text-sm font-bold text-cyan-200">▶ Трейлер</div>
                             @else
                                 <img src="{{ $media->url }}" alt="" class="h-full w-full object-cover">
                             @endif
                         </button>
-                    @empty
-                        <button type="button" class="media-thumb ring-2 ring-cyan-300 h-16 min-w-28 overflow-hidden rounded bg-slate-900 sm:h-20 sm:min-w-36" data-type="image" data-url="{{ $cover }}">
-                            <img src="{{ $cover }}" alt="" class="h-full w-full object-cover">
-                        </button>
-                    @endforelse
+                    @endforeach
                 </div>
             </div>
         </div>
@@ -258,7 +253,7 @@
 
     <aside class="min-w-0 space-y-6">
         <div class="hub-panel overflow-hidden">
-            <img src="{{ $displayCover }}" class="aspect-video w-full object-cover" alt="{{ $game->title }}">
+            <img src="{{ $sidebarImage }}" class="aspect-video w-full object-cover object-top" alt="{{ $game->title }}">
             <div class="space-y-4 p-5">
                 <div class="grid grid-cols-[105px_1fr] gap-x-2 gap-y-2 text-sm sm:grid-cols-[130px_1fr]">
                     <span class="text-slate-500">Недавние обзоры:</span>

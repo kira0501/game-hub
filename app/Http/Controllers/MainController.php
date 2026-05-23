@@ -12,11 +12,21 @@ class MainController extends Controller
 {
     public function __invoke(Request $request, RecommendationService $recommendations)
     {
+        $baseGameQuery = fn () => Game::active()->with(['genres', 'prices', 'media']);
+
         return view('home', [
-            'popularGames' => Game::active()->with(['genres', 'prices', 'media'])->orderByDesc('user_score_avg')->limit(8)->get(),
-            'newGames' => Game::active()->with(['genres', 'prices', 'media'])->latest('release_date')->limit(8)->get(),
-            'dealGames' => Game::active()
-                ->with(['genres', 'prices', 'media'])
+            'carouselGames' => $baseGameQuery()
+                ->where(function ($query) {
+                    $query->whereNotNull('carousel_image')
+                        ->orWhereNotNull('hero_image')
+                        ->orWhereHas('media', fn ($media) => $media->where('type', 'image'));
+                })
+                ->inRandomOrder()
+                ->limit(6)
+                ->get(),
+            'popularGames' => $baseGameQuery()->orderByDesc('user_score_avg')->limit(8)->get(),
+            'newGames' => $baseGameQuery()->latest('release_date')->limit(8)->get(),
+            'dealGames' => $baseGameQuery()
                 ->whereHas('prices', fn ($query) => $query->where('is_available', true)->where('price', '<=', 1000))
                 ->orderByDesc('user_score_avg')
                 ->limit(4)
