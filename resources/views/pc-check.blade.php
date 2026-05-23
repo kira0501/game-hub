@@ -5,6 +5,11 @@
     <div class="min-w-0">
         <h1 class="text-3xl font-black text-white">Проверка ПК</h1>
         <p class="mt-2 text-slate-400">Введите конфигурацию и выберите игру для сравнения с минимальными и рекомендуемыми требованиями.</p>
+        @if($configs->count())
+            <div class="mt-5 rounded-lg border border-cyan-400/20 bg-cyan-400/10 p-4 text-sm text-cyan-50">
+                У вас уже есть сохранённая конфигурация. На странице игры кнопка “Проверить ПК” будет использовать её сразу, без перехода к созданию новой.
+            </div>
+        @endif
         <div class="mt-5 rounded-lg border border-cyan-400/20 bg-cyan-400/10 p-4 text-sm text-cyan-50">
             Браузер не может точно узнать всё железо компьютера из-за безопасности. Автоопределение заполнит только примерные данные: ОС, потоки CPU, RAM и GPU, если браузер отдаёт эти поля.
         </div>
@@ -49,7 +54,15 @@
             <h2 class="text-xl font-black text-white">Сохранённые ПК</h2>
             <div class="mt-4 space-y-3">
                 @forelse($configs as $config)
-                    <div class="rounded-lg bg-white/5 p-3 text-sm"><b>{{ $config->title }}</b><p class="text-slate-400">{{ $config->cpu }} / {{ $config->gpu }} / {{ $config->ram }} GB RAM</p></div>
+                    <div class="rounded-lg bg-white/5 p-3 text-sm">
+                        <b>{{ $config->title }}</b>
+                        <p class="mt-1 text-slate-400">{{ $config->cpu }} / {{ $config->gpu }} / {{ $config->ram }} GB RAM</p>
+                        <form method="POST" action="{{ route('pc.destroy', $config) }}" class="mt-3" onsubmit="return confirm('Удалить конфигурацию ПК? После этого можно будет создать новую.');">
+                            @csrf
+                            @method('DELETE')
+                            <button class="rounded-md border border-red-400/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-500/20">Удалить конфигурацию ПК</button>
+                        </form>
+                    </div>
                 @empty
                     <p class="text-sm text-slate-400">Сохранённых конфигураций пока нет.</p>
                 @endforelse

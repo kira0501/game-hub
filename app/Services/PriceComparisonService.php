@@ -18,6 +18,7 @@ class PriceComparisonService
                 'store' => $price->store->name,
                 'logo' => $price->store->logo,
                 'price' => $price->price,
+                'discount_percent' => $price->discount_percent,
                 'currency' => $price->currency,
                 'is_available' => $price->is_available,
                 'external_url' => $price->external_url,

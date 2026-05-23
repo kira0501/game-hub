@@ -15,6 +15,8 @@ class Game extends Model
         'slug',
         'description',
         'cover',
+        'hero_image',
+        'carousel_image',
         'trailer_url',
         'developer',
         'publisher',
@@ -61,6 +63,11 @@ class Game extends Model
     public function media()
     {
         return $this->hasMany(GameMedia::class)->orderBy('sort_order');
+    }
+
+    public function galleryMedia()
+    {
+        return $this->hasMany(GameMedia::class)->where('role', 'gallery')->orderBy('sort_order');
     }
 
     public function prices()

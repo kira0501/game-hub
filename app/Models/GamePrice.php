@@ -15,6 +15,7 @@ class GamePrice extends Model
         'game_id',
         'store_id',
         'price',
+        'discount_percent',
         'currency',
         'is_available',
         'external_url',
@@ -25,6 +26,7 @@ class GamePrice extends Model
     {
         return [
             'price' => 'decimal:2',
+            'discount_percent' => 'integer',
             'is_available' => 'boolean',
             'updated_at' => 'datetime',
         ];

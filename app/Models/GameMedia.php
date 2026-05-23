@@ -9,7 +9,7 @@ class GameMedia extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['game_id', 'type', 'url', 'sort_order'];
+    protected $fillable = ['game_id', 'type', 'role', 'url', 'sort_order'];
 
     public function game()
     {

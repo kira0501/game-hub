@@ -2,7 +2,7 @@
 
 @section('content')
 @php
-    $priceLabel = fn ($price) => $price['is_available']
+    $priceLabel = fn ($price) => $price['is_available'] && $price['price'] !== null
         ? ((float) $price['price'] === 0.0 ? 'Бесплатно' : number_format((float) $price['price'], 0, '.', ' ') . ' ' . $price['currency'])
         : 'Недоступно';
     $bestLabel = fn ($best) => $best
@@ -24,7 +24,7 @@
             <article class="hub-panel overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-cyan-300/60 hover:shadow-[0_0_28px_rgba(34,211,238,0.18)]">
                 <a href="{{ route('games.show', $game->slug) }}" class="grid h-full sm:grid-cols-[150px_1fr]">
                     <div class="aspect-[3/4] bg-slate-900 sm:h-full sm:aspect-auto">
-                        <img src="{{ $game->cover }}" alt="{{ $game->title }}" class="h-full w-full object-cover object-top">
+                        <img src="{{ $game->cover ?: $game->hero_image ?: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&q=80' }}" alt="{{ $game->title }}" class="h-full w-full object-cover object-top">
                     </div>
                     <div class="flex min-h-64 flex-col p-4">
                         <h2 class="text-lg font-black leading-snug text-white">{{ $game->title }}</h2>

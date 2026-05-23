@@ -1,13 +1,41 @@
 @extends('layouts.admin')
 
 @section('content')
-<h1 class="text-3xl font-black">{{ $price->exists ? 'Редактировать цену' : 'Создать цену' }}</h1>
-<form method="POST" action="{{ $price->exists ? route('admin.prices.update',$price) : route('admin.prices.store') }}" class="mt-6 max-w-2xl space-y-4 rounded-lg border border-white/10 bg-white/5 p-5">@csrf @if($price->exists) @method('PUT') @endif
-    <select name="game_id" class="hub-select">@foreach($games as $game)<option value="{{ $game->id }}" @selected(old('game_id',$price->game_id)==$game->id)>{{ $game->title }}</option>@endforeach</select>
-    <select name="store_id" class="hub-select">@foreach($stores as $store)<option value="{{ $store->id }}" @selected(old('store_id',$price->store_id)==$store->id)>{{ $store->name }}</option>@endforeach</select>
-    <input name="price" type="number" step="0.01" value="{{ old('price',$price->price) }}" class="hub-input" placeholder="Цена"><input name="currency" value="{{ old('currency',$price->currency ?? 'RUB') }}" class="hub-input" placeholder="Валюта"><input name="external_url" value="{{ old('external_url',$price->external_url) }}" class="hub-input" placeholder="URL покупки">
-    <label class="flex items-center gap-2"><input type="checkbox" name="is_available" value="1" @checked(old('is_available',$price->is_available))> Доступна</label>
-    @if($errors->any())<div class="text-red-300">{{ $errors->first() }}</div>@endif
-    <button class="hub-btn">Сохранить</button>
-</form>
+<div class="max-w-5xl">
+    <a href="{{ route('admin.prices.index') }}" class="text-sm text-cyan-300 hover:text-white">← Назад к ценам</a>
+    <h1 class="mt-3 text-3xl font-black">Цены: {{ $game->title }}</h1>
+    <p class="mt-2 text-sm text-slate-400">Если игра недоступна в магазине, выключи доступность и оставь цену пустой.</p>
+
+    <form method="POST" action="{{ route('admin.prices.games.update', $game) }}" class="mt-6 grid gap-5">
+        @csrf
+        @method('PUT')
+
+        @foreach($stores as $store)
+            @php
+                $price = $game->prices->firstWhere('store_id', $store->id);
+            @endphp
+            <section class="rounded-lg border border-white/10 bg-white/5 p-5">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <h2 class="text-xl font-black text-white">{{ $store->name }}</h2>
+                    <label class="flex items-center gap-2 text-sm">
+                        <input type="checkbox" name="prices[{{ $store->id }}][is_available]" value="1" @checked(old("prices.{$store->id}.is_available", $price?->is_available ?? false))>
+                        Доступна
+                    </label>
+                </div>
+                <div class="grid gap-4 md:grid-cols-4">
+                    <input name="prices[{{ $store->id }}][price]" type="number" step="0.01" value="{{ old("prices.{$store->id}.price", $price?->price) }}" class="hub-input" placeholder="Цена">
+                    <input name="prices[{{ $store->id }}][currency]" value="{{ old("prices.{$store->id}.currency", $price?->currency ?? 'RUB') }}" class="hub-input" placeholder="Валюта">
+                    <input name="prices[{{ $store->id }}][discount_percent]" type="number" min="0" max="100" value="{{ old("prices.{$store->id}.discount_percent", $price?->discount_percent ?? 0) }}" class="hub-input" placeholder="Скидка %">
+                    <input name="prices[{{ $store->id }}][external_url]" value="{{ old("prices.{$store->id}.external_url", $price?->external_url) }}" class="hub-input md:col-span-1" placeholder="Ссылка">
+                </div>
+            </section>
+        @endforeach
+
+        @if($errors->any())
+            <div class="rounded border border-red-400/30 bg-red-500/10 p-3 text-red-100">{{ $errors->first() }}</div>
+        @endif
+
+        <button class="hub-btn w-fit">Сохранить цены</button>
+    </form>
+</div>
 @endsection

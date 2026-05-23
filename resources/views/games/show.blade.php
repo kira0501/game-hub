@@ -13,8 +13,9 @@
     $recentTotal = $recentReviews->count();
     $recentPositive = $recentReviews->where('rating', '>=', 7)->count();
     $recentPercent = $recentTotal ? round($recentPositive / $recentTotal * 100) : $positivePercent;
-    $mediaItems = $game->media->values();
-    $displayCover = $mediaItems->firstWhere('type', 'image')?->url ?: $cover;
+    $mediaItems = $game->media->sortBy('sort_order')->values();
+    $displayCover = $game->hero_image ?: $mediaItems->firstWhere('type', 'image')?->url ?: $cover;
+    $visibleReviews = auth()->user()?->isAdmin() ? $game->reviews : $approvedReviews;
     $mediaImage = fn ($item) => $item->media->firstWhere('type', 'image')?->url
         ?: $item->cover
         ?: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80';
@@ -165,8 +166,18 @@
                 <h3 class="text-lg font-black text-white">Оставить свой отзыв</h3>
                 @auth
                     <p class="mt-2 text-sm text-slate-400">Отзыв появится на странице после проверки администратором.</p>
-                    <form method="POST" action="{{ route('reviews.store', $game) }}" class="mt-4 grid gap-3">@csrf
-                        <input name="rating" type="number" min="1" max="10" class="hub-input" placeholder="Оценка 1-10">
+                    <form method="POST" action="{{ route('reviews.store', $game) }}" class="mt-4 grid gap-3" onsubmit="return confirm('Отправить отзыв на модерацию? Он появится на сайте после проверки администратора.');">@csrf
+                        <div class="grid gap-2">
+                            <span class="text-sm font-semibold text-slate-300">Оценка</span>
+                            <div class="flex flex-wrap gap-2" id="rating-scale">
+                                @for($i = 1; $i <= 10; $i++)
+                                    <label class="cursor-pointer">
+                                        <input class="peer sr-only" type="radio" name="rating" value="{{ $i }}" @checked($i === 8) required>
+                                        <span class="grid h-9 w-9 place-items-center rounded-md border border-white/10 bg-white/5 text-sm font-black text-slate-300 transition peer-checked:border-cyan-300 peer-checked:bg-cyan-400/20 peer-checked:text-cyan-100 hover:border-cyan-300/50">{{ $i }}</span>
+                                    </label>
+                                @endfor
+                            </div>
+                        </div>
                         <textarea name="text" class="hub-input min-h-28" placeholder="Ваш отзыв"></textarea>
                         <button class="hub-btn w-fit">Отправить на модерацию</button>
                     </form>
@@ -180,9 +191,36 @@
             </div>
 
             <div class="space-y-4">
-                @forelse($approvedReviews as $review)
+                @forelse($visibleReviews as $review)
                     <div class="rounded-lg bg-white/5 p-4">
-                        <div class="flex justify-between gap-4"><b>{{ $review->user->name }}</b><span class="text-cyan-200">{{ $review->rating }}/10</span></div>
+                        <div class="flex flex-wrap justify-between gap-4">
+                            <b>{{ $review->user->name }}</b>
+                            <span class="text-cyan-200">{{ $review->rating }}/10</span>
+                        </div>
+                        @if(auth()->user()?->isAdmin())
+                            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                                <span class="rounded bg-white/10 px-2 py-1 text-slate-300">
+                                    {{ ['pending' => 'На модерации', 'approved' => 'Одобрен', 'rejected' => 'Отклонён'][$review->status] ?? $review->status }}
+                                </span>
+                                <form method="POST" action="{{ route('admin.reviews.update', $review) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="approved">
+                                    <button class="rounded bg-cyan-400/15 px-2 py-1 font-semibold text-cyan-200 hover:bg-cyan-400/25">Одобрить</button>
+                                </form>
+                                <form method="POST" action="{{ route('admin.reviews.update', $review) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="rejected">
+                                    <button class="rounded bg-amber-400/15 px-2 py-1 font-semibold text-amber-200 hover:bg-amber-400/25">Отклонить</button>
+                                </form>
+                                <form method="POST" action="{{ route('admin.reviews.destroy', $review) }}" onsubmit="return confirm('Удалить отзыв?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="rounded bg-red-500/15 px-2 py-1 font-semibold text-red-200 hover:bg-red-500/25">Удалить</button>
+                                </form>
+                            </div>
+                        @endif
                         <p class="mt-2 text-slate-300">{{ $review->text }}</p>
                     </div>
                 @empty
@@ -276,7 +314,12 @@
                 @foreach($priceComparison['rows'] as $row)
                     <div class="rounded-lg bg-white/5 p-4">
                         <div class="flex items-center justify-between"><b>{{ $row['store'] }}</b>@if($row['is_best'])<span class="text-xs text-cyan-200">Дешевле</span>@endif</div>
-                        <p class="mt-2 text-slate-300">{{ $row['is_available'] ? ((float) $row['price'] === 0.0 ? 'Бесплатно' : number_format((float)$row['price'],0,'.',' ') . ' ' . $row['currency']) : 'Недоступно' }}</p>
+                        <p class="mt-2 text-slate-300">
+                            {{ $row['is_available'] && $row['price'] !== null ? ((float) $row['price'] === 0.0 ? 'Бесплатно' : number_format((float)$row['price'],0,'.',' ') . ' ' . $row['currency']) : 'Недоступно' }}
+                            @if(($row['discount_percent'] ?? 0) > 0)
+                                <span class="ml-2 rounded bg-lime-400/15 px-2 py-1 text-xs font-bold text-lime-300">-{{ $row['discount_percent'] }}%</span>
+                            @endif
+                        </p>
                         @if($row['external_url'])<a class="mt-2 inline-block text-sm text-cyan-300" href="{{ $row['external_url'] }}" target="_blank">Купить</a>@endif
                     </div>
                 @endforeach

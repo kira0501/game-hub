@@ -17,6 +17,7 @@ class AdminPriceRequest extends FormRequest
             'game_id' => ['required', 'exists:games,id'],
             'store_id' => ['required', 'exists:stores,id'],
             'price' => ['nullable', 'numeric', 'min:0', 'max:999999'],
+            'discount_percent' => ['nullable', 'integer', 'min:0', 'max:100'],
             'currency' => ['required', 'string', 'max:8'],
             'is_available' => ['nullable', 'boolean'],
             'external_url' => ['nullable', 'url', 'max:500'],

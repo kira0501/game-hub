@@ -7,7 +7,7 @@
     <title>{{ $title ?? 'Game Hub' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-hub-bg">
+<body class="flex min-h-screen flex-col bg-hub-bg">
     @php
         $navClass = fn (bool $active) => $active
             ? 'border-b-2 border-cyan-300 pb-1 text-cyan-300'
@@ -30,8 +30,14 @@
                     @endif
                 @endauth
             </nav>
-            <form action="{{ route('games.index') }}" class="ml-auto hidden max-w-md flex-1 md:block">
-                <input name="q" value="{{ request('q') }}" class="hub-input h-10" placeholder="Поиск игр, жанров, студий">
+            <form action="{{ route('games.index') }}" class="steam-search relative ml-auto hidden max-w-md flex-1 md:block" data-search-box>
+                <div class="flex">
+                    <input name="q" value="{{ request('q') }}" autocomplete="off" class="hub-input h-10 rounded-r-none border-r-0" placeholder="Поиск игр, жанров, студий" data-search-input>
+                    <button class="grid h-10 w-12 place-items-center rounded-r-md border border-cyan-300/40 bg-cyan-400 text-slate-950 transition hover:bg-cyan-300" aria-label="Найти">
+                        <span class="text-lg">⌕</span>
+                    </button>
+                </div>
+                <div class="steam-search-results hidden" data-search-results></div>
             </form>
             <div class="ml-auto hidden items-center gap-2 md:flex">
                 @auth
@@ -46,8 +52,12 @@
         </div>
         <div id="mobile-menu" class="hidden border-t border-white/10 bg-hub-bg/95 md:hidden">
             <div class="hub-container grid gap-3 py-4">
-                <form action="{{ route('games.index') }}">
-                    <input name="q" value="{{ request('q') }}" class="hub-input h-11" placeholder="Поиск игр, жанров, студий">
+                <form action="{{ route('games.index') }}" class="steam-search relative" data-search-box>
+                    <div class="flex">
+                        <input name="q" value="{{ request('q') }}" autocomplete="off" class="hub-input h-11 rounded-r-none border-r-0" placeholder="Поиск игр, жанров, студий" data-search-input>
+                        <button class="grid h-11 w-12 place-items-center rounded-r-md border border-cyan-300/40 bg-cyan-400 text-slate-950" aria-label="Найти">⌕</button>
+                    </div>
+                    <div class="steam-search-results hidden" data-search-results></div>
                 </form>
                 <nav class="grid gap-2 text-sm font-semibold">
                     <a class="{{ $mobileNavClass(request()->routeIs('games.*') || request()->routeIs('genres.*')) }}" href="{{ route('games.index') }}">Каталог</a>
@@ -79,7 +89,7 @@
         </div>
     @endif
 
-    <main>
+    <main class="flex-1">
         {{ $slot ?? '' }}
         @yield('content')
     </main>
@@ -118,6 +128,45 @@
         </div>
     </footer>
     @stack('scripts')
+    <style>
+        .steam-search-results {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 8px);
+            z-index: 80;
+            overflow: hidden;
+            border: 1px solid rgba(103, 232, 249, .35);
+            border-radius: 8px;
+            background: linear-gradient(180deg, rgba(22, 35, 51, .98), rgba(7, 16, 24, .98));
+            box-shadow: 0 18px 42px rgba(0, 0, 0, .45);
+        }
+
+        .steam-search-item {
+            display: grid;
+            grid-template-columns: 56px minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, .07);
+        }
+
+        .steam-search-item:last-child {
+            border-bottom: 0;
+        }
+
+        .steam-search-item:hover {
+            background: rgba(34, 211, 238, .12);
+        }
+
+        .steam-search-item img {
+            width: 56px;
+            height: 72px;
+            object-fit: cover;
+            border-radius: 4px;
+            background: #0f172a;
+        }
+    </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const toggle = document.getElementById('mobile-menu-toggle');
@@ -128,6 +177,68 @@
                 const isOpen = !menu.classList.toggle('hidden');
                 toggle.setAttribute('aria-expanded', String(isOpen));
                 toggle.textContent = isOpen ? '×' : '☰';
+            });
+
+            const endpoint = @json(route('search.suggest'));
+            const boxes = Array.from(document.querySelectorAll('[data-search-box]'));
+            let searchTimer = null;
+
+            function renderResults(container, items) {
+                if (!items.length) {
+                    container.innerHTML = '<div class="p-3 text-sm text-slate-400">Ничего не найдено</div>';
+                    container.classList.remove('hidden');
+                    return;
+                }
+
+                container.innerHTML = items.map((item) => `
+                    <a class="steam-search-item" href="${item.url}">
+                        <img src="${item.image}" alt="">
+                        <span class="min-w-0">
+                            <span class="block truncate text-sm font-black text-white">${item.title}</span>
+                            <span class="mt-1 block truncate text-xs text-slate-400">${item.meta || ''}</span>
+                        </span>
+                        <span class="text-right text-xs font-black text-cyan-200">
+                            ${item.discount ? `<span class="mb-1 block rounded bg-lime-400/15 px-1 text-lime-300">-${item.discount}%</span>` : ''}
+                            ${item.price}
+                        </span>
+                    </a>
+                `).join('');
+                container.classList.remove('hidden');
+            }
+
+            boxes.forEach((box) => {
+                const input = box.querySelector('[data-search-input]');
+                const results = box.querySelector('[data-search-results]');
+                if (!input || !results) return;
+
+                input.addEventListener('input', () => {
+                    clearTimeout(searchTimer);
+                    const query = input.value.trim();
+                    if (query.length < 2) {
+                        results.classList.add('hidden');
+                        results.innerHTML = '';
+                        return;
+                    }
+
+                    searchTimer = setTimeout(async () => {
+                        const response = await fetch(`${endpoint}?q=${encodeURIComponent(query)}`, {
+                            headers: { 'Accept': 'application/json' },
+                        });
+                        renderResults(results, await response.json());
+                    }, 180);
+                });
+
+                input.addEventListener('focus', () => {
+                    if (results.innerHTML.trim()) results.classList.remove('hidden');
+                });
+            });
+
+            document.addEventListener('click', (event) => {
+                boxes.forEach((box) => {
+                    if (!box.contains(event.target)) {
+                        box.querySelector('[data-search-results]')?.classList.add('hidden');
+                    }
+                });
             });
         });
     </script>

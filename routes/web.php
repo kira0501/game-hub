@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', MainController::class)->name('home');
 
 Route::get('/games', [GameController::class, 'index'])->name('games.index');
+Route::get('/search/suggest', [GameController::class, 'suggest'])->name('search.suggest');
 Route::get('/games/{slug}', [GameController::class, 'show'])->name('games.show');
 Route::get('/genres/{slug}', [GameController::class, 'genre'])->name('genres.show');
 Route::get('/compare-prices', PriceComparisonController::class)->name('prices.compare');
@@ -50,6 +51,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/pc-check', [PcConfigController::class, 'index'])->name('pc.index');
     Route::post('/pc-check/configs', [PcConfigController::class, 'store'])->name('pc.store');
     Route::patch('/pc-check/configs/{pcConfig}', [PcConfigController::class, 'update'])->name('pc.update');
+    Route::delete('/pc-check/configs/{pcConfig}', [PcConfigController::class, 'destroy'])->name('pc.destroy');
     Route::post('/pc-check/compare', [PcConfigController::class, 'compare'])->name('pc.compare');
 });
 
@@ -59,6 +61,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('genres', AdminGenreController::class)->except('show');
     Route::resource('users', AdminUserController::class)->except('show');
     Route::resource('stores', AdminStoreController::class)->except('show');
+    Route::get('prices/games/{game}/edit', [AdminPriceController::class, 'editGame'])->name('prices.games.edit');
+    Route::put('prices/games/{game}', [AdminPriceController::class, 'updateGame'])->name('prices.games.update');
     Route::resource('prices', AdminPriceController::class)->except('show');
     Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
     Route::patch('reviews/{review}', [AdminReviewController::class, 'update'])->name('reviews.update');

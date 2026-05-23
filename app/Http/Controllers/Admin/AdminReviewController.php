@@ -8,10 +8,23 @@ use Illuminate\Http\Request;
 
 class AdminReviewController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $status = $request->query('status', 'pending');
+        $query = Review::with(['user', 'game'])->latest();
+
+        if (in_array($status, ['pending', 'approved', 'rejected'], true)) {
+            $query->where('status', $status);
+        }
+
         return view('admin.reviews.index', [
-            'reviews' => Review::with(['user', 'game'])->latest()->paginate(20),
+            'reviews' => $query->paginate(20)->withQueryString(),
+            'status' => $status,
+            'counts' => [
+                'pending' => Review::where('status', 'pending')->count(),
+                'approved' => Review::where('status', 'approved')->count(),
+                'rejected' => Review::where('status', 'rejected')->count(),
+            ],
         ]);
     }
 
@@ -26,7 +39,7 @@ class AdminReviewController extends Controller
             'user_score_avg' => round($review->game->reviews()->where('status', 'approved')->avg('rating') ?: 0, 1),
         ]);
 
-        return back()->with('status', 'Статус отзыва обновлен.');
+        return back()->with('status', 'Статус отзыва обновлён.');
     }
 
     public function destroy(Review $review)

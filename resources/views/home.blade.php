@@ -2,9 +2,11 @@
 
 @section('content')
 @php
-    $mediaImage = fn ($game) => $game->media->firstWhere('type', 'image')?->url
+    $mediaImage = fn ($game) => $game->hero_image
+        ?: $game->media->firstWhere('type', 'image')?->url
         ?: $game->cover
         ?: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80';
+    $carouselImage = fn ($game) => $game->carousel_image ?: $game->hero_image ?: $mediaImage($game);
     $coverImage = fn ($game) => $game->cover
         ?: $mediaImage($game);
     $mediaImages = fn ($game) => $game->media->where('type', 'image')->take(4)->values();
@@ -14,8 +16,9 @@
 @endphp
 <section class="relative overflow-hidden border-b border-white/10">
     <div class="absolute inset-0">
-        <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1800&q=80" class="h-full w-full object-cover opacity-35" alt="">
-        <div class="absolute inset-0 bg-gradient-to-r from-hub-bg via-hub-bg/80 to-hub-bg/35"></div>
+        <img id="home-hero-bg" src="{{ $popularGames->first() ? $carouselImage($popularGames->first()) : 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1800&q=80' }}" class="h-full w-full object-cover opacity-30 transition duration-700" alt="">
+        <div class="absolute inset-0 bg-gradient-to-r from-hub-bg via-hub-bg/85 to-hub-bg/50"></div>
+        <div class="absolute inset-0 bg-black/25"></div>
     </div>
     <div class="hub-container relative grid min-h-[520px] content-center gap-8 py-8 md:min-h-[650px] md:py-12">
         <div class="max-w-2xl">
@@ -35,15 +38,17 @@
                         @php
                             $best = $game->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first();
                         @endphp
-                        <article class="hero-slide {{ $index === 0 ? 'is-active' : '' }}" data-slide="{{ $index }}">
+                        <article class="hero-slide {{ $index === 0 ? 'is-active' : '' }}" data-slide="{{ $index }}" data-bg="{{ $carouselImage($game) }}">
                             <div class="steam-slide-grid">
                                 <a href="{{ route('games.show', $game->slug) }}" class="steam-slide-image-link">
-                                    <img src="{{ $mediaImage($game) }}" class="steam-slide-image" alt="{{ $game->title }}">
+                                    <img src="{{ $carouselImage($game) }}" class="steam-slide-image" alt="{{ $game->title }}" data-main-slide-image>
                                 </a>
                                 <div class="steam-slide-info">
                                     <div class="steam-thumbs">
-                                        @foreach($mediaImages($game) as $thumb)
-                                            <img src="{{ $thumb->url }}" alt="{{ $game->title }}">
+                                        @foreach($mediaImages($game) as $thumbIndex => $thumb)
+                                            <button type="button" class="steam-thumb-button {{ $thumbIndex === 0 ? 'is-active' : '' }}" data-thumb-url="{{ $thumb->url }}">
+                                                <img src="{{ $thumb->url }}" alt="{{ $game->title }}">
+                                            </button>
                                         @endforeach
                                     </div>
                                     <div class="steam-copy">
@@ -142,10 +147,10 @@
                         $best = $game->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first();
                     @endphp
                     <a href="{{ route('games.show', $game->slug) }}" class="hub-panel group flex h-full min-h-[330px] flex-col overflow-hidden transition hover:-translate-y-1 hover:border-cyan-300/50 hover:shadow-[0_0_28px_rgba(34,211,238,0.22)]">
-                        <div class="aspect-video overflow-hidden bg-slate-900">
-                            <img src="{{ $coverImage($game) }}" class="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105" alt="{{ $game->title }}">
+                        <div class="aspect-video overflow-hidden bg-slate-950">
+                            <img src="{{ $coverImage($game) }}" class="h-full w-full object-cover object-top transition-all duration-500 group-hover:object-contain" alt="{{ $game->title }}">
                         </div>
-                        <div class="flex flex-1 flex-col p-4">
+                        <div class="flex flex-1 flex-col p-4 transition duration-300 group-hover:-translate-y-3 group-hover:opacity-0">
                             <h3 class="min-h-12 text-base font-black leading-snug text-white">{{ $game->title }}</h3>
                             <div class="mt-3 flex min-h-14 flex-wrap content-start gap-1.5">
                                 @foreach($game->genres->take(3) as $genre)
@@ -274,6 +279,18 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
+    }
+
+    .steam-thumb-button {
+        overflow: hidden;
+        border: 2px solid transparent;
+        border-radius: 3px;
+        background: rgba(255,255,255,.06);
+        cursor: pointer;
+    }
+
+    .steam-thumb-button.is-active {
+        border-color: #67e8f9;
     }
 
     .steam-thumbs img {
@@ -465,7 +482,24 @@
             dots.forEach((dot, dotIndex) => {
                 dot.classList.toggle('is-active', dotIndex === active);
             });
+            const bg = document.getElementById('home-hero-bg');
+            if (bg && slides[active]?.dataset.bg) bg.src = slides[active].dataset.bg;
         }
+
+        carousel.querySelectorAll('.steam-thumb-button').forEach((thumb) => {
+            const activateThumb = () => {
+                const slide = thumb.closest('.hero-slide');
+                const mainImage = slide?.querySelector('[data-main-slide-image]');
+                if (!slide || !mainImage) return;
+
+                slide.querySelectorAll('.steam-thumb-button').forEach((item) => item.classList.remove('is-active'));
+                thumb.classList.add('is-active');
+                mainImage.src = thumb.dataset.thumbUrl;
+            };
+
+            thumb.addEventListener('mouseenter', activateThumb);
+            thumb.addEventListener('click', activateThumb);
+        });
 
         function start() {
             stop();

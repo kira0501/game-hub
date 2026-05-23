@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminGameRequest;
 use App\Models\Game;
 use App\Models\Genre;
+use Illuminate\Support\Facades\Storage;
 
 class AdminGameController extends Controller
 {
@@ -21,6 +22,7 @@ class AdminGameController extends Controller
         return view('admin.games.form', [
             'game' => new Game(),
             'genres' => Genre::orderBy('name')->get(),
+            'media' => collect(),
         ]);
     }
 
@@ -30,6 +32,7 @@ class AdminGameController extends Controller
         $game = Game::create($this->gameData($data));
         $game->genres()->sync($data['genres'] ?? []);
         $game->systemRequirement()->create($this->requirementsData($data));
+        $this->syncMedia($request, $game);
 
         return redirect()->route('admin.games.index')->with('status', 'Игра создана.');
     }
@@ -39,6 +42,7 @@ class AdminGameController extends Controller
         return view('admin.games.form', [
             'game' => $game->load('systemRequirement', 'genres'),
             'genres' => Genre::orderBy('name')->get(),
+            'media' => $game->media()->get(),
         ]);
     }
 
@@ -48,6 +52,7 @@ class AdminGameController extends Controller
         $game->update($this->gameData($data));
         $game->genres()->sync($data['genres'] ?? []);
         $game->systemRequirement()->updateOrCreate(['game_id' => $game->id], $this->requirementsData($data));
+        $this->syncMedia($request, $game);
 
         return redirect()->route('admin.games.index')->with('status', 'Игра обновлена.');
     }
@@ -61,11 +66,13 @@ class AdminGameController extends Controller
 
     private function gameData(array $data): array
     {
-        return collect($data)->only([
+        $base = collect($data)->only([
             'title',
             'slug',
             'description',
             'cover',
+            'hero_image',
+            'carousel_image',
             'trailer_url',
             'developer',
             'publisher',
@@ -73,7 +80,19 @@ class AdminGameController extends Controller
             'metacritic_score',
             'user_score_avg',
             'controller_support',
-        ])->merge([
+        ]);
+
+        foreach ([
+            'cover_file' => 'cover',
+            'hero_image_file' => 'hero_image',
+            'carousel_image_file' => 'carousel_image',
+        ] as $input => $column) {
+            if (request()->hasFile($input)) {
+                $base[$column] = Storage::disk('public')->url(request()->file($input)->store('games', 'public'));
+            }
+        }
+
+        return $base->merge([
             'play_features' => $data['play_features'] ?? [],
             'supports_xbox_controller' => (bool) ($data['supports_xbox_controller'] ?? false),
             'supports_playstation_controller' => (bool) ($data['supports_playstation_controller'] ?? false),
@@ -98,5 +117,55 @@ class AdminGameController extends Controller
             'directx_min',
             'directx_rec',
         ])->all();
+    }
+
+    private function syncMedia(AdminGameRequest $request, Game $game): void
+    {
+        if ($request->filled('remove_media')) {
+            $game->media()->whereIn('id', $request->input('remove_media', []))->delete();
+        }
+
+        $order = (int) $game->media()->max('sort_order');
+
+        foreach ($request->file('gallery_images', []) as $file) {
+            $game->media()->create([
+                'type' => 'image',
+                'role' => 'gallery',
+                'url' => Storage::disk('public')->url($file->store('games/gallery', 'public')),
+                'sort_order' => ++$order,
+            ]);
+        }
+
+        foreach ($request->file('video_files', []) as $file) {
+            $game->media()->create([
+                'type' => 'video',
+                'role' => 'gallery',
+                'url' => Storage::disk('public')->url($file->store('games/videos', 'public')),
+                'sort_order' => ++$order,
+            ]);
+        }
+
+        foreach (preg_split('/\R+/', (string) $request->input('gallery_urls')) as $url) {
+            $url = trim($url);
+            if ($url === '') {
+                continue;
+            }
+
+            $game->media()->create([
+                'type' => preg_match('/\.(mp4|webm|ogg)(\?|$)/i', $url) || str_contains($url, 'youtube.com') || str_contains($url, 'youtu.be') ? 'video' : 'image',
+                'role' => 'gallery',
+                'url' => $url,
+                'sort_order' => ++$order,
+            ]);
+        }
+
+        if ($request->filled('trailer_url') && ! $game->media()->where('url', $request->input('trailer_url'))->exists()) {
+            $game->media()->create([
+                'type' => 'video',
+                'role' => 'gallery',
+                'url' => $request->input('trailer_url'),
+                'sort_order' => ++$order,
+            ]);
+        }
     }
 }

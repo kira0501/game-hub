@@ -34,6 +34,14 @@ class PcConfigController extends Controller
         return back()->with('status', 'Конфигурация обновлена.');
     }
 
+    public function destroy(Request $request, PcConfig $pcConfig)
+    {
+        abort_unless($pcConfig->user_id === $request->user()->id, 403);
+        $pcConfig->delete();
+
+        return back()->with('status', 'Конфигурация ПК удалена. Теперь можно создать новую.');
+    }
+
     public function compare(PcConfigRequest $request, CompatibilityService $service)
     {
         $data = $request->validated();

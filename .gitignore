@@ -15,7 +15,6 @@
 /storage/framework/views/*
 !/storage/framework/views/.gitkeep
 /storage/logs/*
-/public/build
 /public/hot
 Homestead.json
 Homestead.yaml
