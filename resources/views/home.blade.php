@@ -12,6 +12,7 @@
     $carouselImage = fn ($game) => $game->carousel_image ?: $game->hero_image ?: $mediaImage($game);
     $coverImage = fn ($game) => $game->cover
         ?: $placeholderCover;
+    $heroBackgroundImage = fn ($game) => $game->hero_image ?: $game->carousel_image ?: $placeholderWide;
     $mediaImages = fn ($game) => $galleryImages($game)
         ->reject(fn ($media) => in_array($media->url, array_filter([$game->cover, $game->hero_image, $game->carousel_image]), true))
         ->take(4)
@@ -23,7 +24,8 @@
 @endphp
 <section class="relative overflow-hidden border-b border-white/10">
     <div class="absolute inset-0">
-        <img id="home-hero-bg" src="{{ $heroGames->first() ? $carouselImage($heroGames->first()) : $placeholderWide }}" class="h-full w-full object-cover opacity-30 transition duration-700" alt="">
+        <img id="home-hero-bg-current" src="{{ $heroGames->first() ? $heroBackgroundImage($heroGames->first()) : $placeholderWide }}" class="absolute inset-0 h-full w-full object-cover opacity-30 transition-opacity duration-700 ease-out" alt="">
+        <img id="home-hero-bg-next" src="" class="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-700 ease-out" alt="">
         <div class="absolute inset-0 bg-gradient-to-r from-hub-bg via-hub-bg/85 to-hub-bg/50"></div>
         <div class="absolute inset-0 bg-black/25"></div>
     </div>
@@ -45,17 +47,18 @@
                         @php
                             $best = $game->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first();
                             $defaultSlideImage = $carouselImage($game);
+                            $slideBackgroundImage = $heroBackgroundImage($game);
                         @endphp
-                        <article class="hero-slide {{ $index === 0 ? 'is-active' : '' }}" data-slide="{{ $index }}" data-bg="{{ $defaultSlideImage }}" data-default-image="{{ $defaultSlideImage }}">
+                        <article class="hero-slide {{ $index === 0 ? 'is-active' : '' }}" data-slide="{{ $index }}" data-bg="{{ $slideBackgroundImage }}" data-default-image="{{ $defaultSlideImage }}">
                             <div class="steam-slide-grid">
                                 <a href="{{ route('games.show', $game->slug) }}" class="steam-slide-image-link">
-                                    <img src="{{ $defaultSlideImage }}" class="steam-slide-image" alt="{{ $game->title }}" data-main-slide-image>
+                                    <img src="{{ $defaultSlideImage }}" onerror="this.onerror=null;this.src='{{ $placeholderWide }}';" class="steam-slide-image" alt="{{ $game->title }}" data-main-slide-image>
                                 </a>
                                 <div class="steam-slide-info">
                                     <div class="steam-thumbs">
                                         @foreach($mediaImages($game) as $thumbIndex => $thumb)
                                             <button type="button" class="steam-thumb-button" data-thumb-url="{{ $thumb->url }}">
-                                                <img src="{{ $thumb->url }}" alt="{{ $game->title }}">
+                                                <img src="{{ $thumb->url }}" onerror="this.closest('button').remove();" alt="{{ $game->title }}">
                                             </button>
                                         @endforeach
                                     </div>
@@ -154,11 +157,11 @@
                     @php
                         $best = $game->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first();
                     @endphp
-                    <a href="{{ route('games.show', $game->slug) }}" class="hub-panel group flex h-full min-h-[330px] flex-col overflow-hidden transition hover:-translate-y-1 hover:border-cyan-300/50 hover:shadow-[0_0_28px_rgba(34,211,238,0.22)]">
-                        <div class="aspect-video overflow-hidden bg-slate-950">
-                            <img src="{{ $coverImage($game) }}" class="h-full w-full object-cover object-top transition-all duration-500 group-hover:object-contain" alt="{{ $game->title }}">
+                    <a href="{{ route('games.show', $game->slug) }}" class="hub-panel group flex h-full min-h-[360px] flex-col overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-cyan-300/50 hover:shadow-[0_0_28px_rgba(34,211,238,0.22)]">
+                        <div class="h-44 overflow-hidden bg-slate-950">
+                            <img src="{{ $coverImage($game) }}" onerror="this.onerror=null;this.src='{{ $placeholderCover }}';" class="h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.03]" alt="{{ $game->title }}">
                         </div>
-                        <div class="flex flex-1 flex-col p-4 transition duration-300 group-hover:-translate-y-3 group-hover:opacity-0">
+                        <div class="flex flex-1 flex-col p-4">
                             <h3 class="min-h-12 text-base font-black leading-snug text-white">{{ $game->title }}</h3>
                             <div class="mt-3 flex min-h-14 flex-wrap content-start gap-1.5">
                                 @foreach($game->genres->take(3) as $genre)
@@ -487,8 +490,11 @@
         const dots = Array.from(carousel.querySelectorAll('[data-carousel-dot]'));
         const prev = carousel.querySelector('[data-carousel-prev]');
         const next = carousel.querySelector('[data-carousel-next]');
+        const bgCurrent = document.getElementById('home-hero-bg-current');
+        const bgNext = document.getElementById('home-hero-bg-next');
         let active = 0;
         let timer = null;
+        let bgTimer = null;
 
         function show(index) {
             active = (index + slides.length) % slides.length;
@@ -499,8 +505,7 @@
             dots.forEach((dot, dotIndex) => {
                 dot.classList.toggle('is-active', dotIndex === active);
             });
-            const bg = document.getElementById('home-hero-bg');
-            if (bg && slides[active]?.dataset.bg) bg.src = slides[active].dataset.bg;
+            fadeHeroBackground(slides[active]?.dataset.bg);
         }
 
         function resetSlide(slide) {
@@ -516,7 +521,7 @@
         }
 
         function swapMainImage(image, url) {
-            if (!image || !url || image.src === url) return;
+            if (!image || !url || image.getAttribute('src') === url || image.src === url) return;
 
             image.classList.add('is-swapping');
             window.setTimeout(() => {
@@ -525,6 +530,25 @@
                     image.classList.remove('is-swapping');
                 }, { once: true });
             }, 120);
+        }
+
+        function fadeHeroBackground(url) {
+            if (!bgCurrent || !bgNext || !url || bgCurrent.getAttribute('src') === url || bgCurrent.src === url) return;
+
+            window.clearTimeout(bgTimer);
+            bgNext.src = url;
+            bgNext.classList.remove('opacity-0');
+            bgNext.classList.add('opacity-30');
+            bgCurrent.classList.remove('opacity-30');
+            bgCurrent.classList.add('opacity-0');
+
+            bgTimer = window.setTimeout(() => {
+                bgCurrent.src = url;
+                bgCurrent.classList.remove('opacity-0');
+                bgCurrent.classList.add('opacity-30');
+                bgNext.classList.remove('opacity-30');
+                bgNext.classList.add('opacity-0');
+            }, 720);
         }
 
         function previewThumb(thumb, shouldLock = false) {

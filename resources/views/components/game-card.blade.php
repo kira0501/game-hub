@@ -1,16 +1,17 @@
 @props(['game', 'reason' => null])
 @php
+    $placeholderCover = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=900&q=80';
     $cover = $game->cover
-        ?: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=900&q=80';
+        ?: $placeholderCover;
     $best = $game->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first();
     $priceLabel = $best ? ((float) $best->price === 0.0 ? 'Бесплатно' : number_format((float) $best->price, 0, '.', ' ') . ' ' . $best->currency) : 'Нет цены';
 @endphp
 <article class="group overflow-hidden rounded-lg border border-white/10 bg-hub-panel transition duration-300 hover:-translate-y-1 hover:border-cyan-300/70 hover:shadow-[0_0_28px_rgba(34,211,238,0.22)]">
     <a href="{{ route('games.show', $game->slug) }}" class="block">
         <div class="aspect-[3/4] overflow-hidden bg-slate-950">
-            <img src="{{ $cover }}" alt="{{ $game->title }}" class="h-full w-full object-cover transition-all duration-500 group-hover:scale-100 group-hover:object-contain">
+            <img src="{{ $cover }}" alt="{{ $game->title }}" onerror="this.onerror=null;this.src='{{ $placeholderCover }}';" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]">
         </div>
-        <div class="space-y-3 p-3 transition duration-300 group-hover:-translate-y-2 group-hover:opacity-0 sm:p-4">
+        <div class="space-y-3 p-3 sm:p-4">
             <div>
                 <h3 class="line-clamp-1 font-bold text-white">{{ $game->title }}</h3>
                 <p class="mt-1 line-clamp-1 text-xs text-slate-400">{{ $game->genres->pluck('name')->join(' • ') }}</p>
