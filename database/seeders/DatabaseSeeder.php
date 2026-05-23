@@ -187,15 +187,6 @@ class DatabaseSeeder extends Seeder
 
     private function cover(?int $appid, int $index): string
     {
-        $manualCovers = [
-            3280350 => 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3280350/6270c77b0729e2df0a17d660286eeddfd9169386/header.jpg?t=1774022345',
-            2483190 => 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2483190/27abb1584a118d50d0e3950fd48d557c51981db7/header.jpg?t=1778870245',
-        ];
-
-        if ($appid && isset($manualCovers[$appid])) {
-            return $manualCovers[$appid];
-        }
-
         if ($appid) {
             return "https://cdn.akamai.steamstatic.com/steam/apps/{$appid}/library_600x900_2x.jpg";
         }

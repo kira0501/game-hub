@@ -6,15 +6,25 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Game Hub' }}</title>
     @php
-        $viteManifest = public_path('build/manifest.json');
-        $viteAssets = is_file($viteManifest)
+        $viteManifest = collect([
+            public_path('build/manifest.json'),
+            base_path('public_html/build/manifest.json'),
+        ])->first(fn ($path) => is_file($path));
+        $viteAssets = $viteManifest
             ? json_decode((string) file_get_contents($viteManifest), true)
             : null;
+        $viteBuildPath = $viteManifest ? dirname($viteManifest) : null;
         $viteBase = rtrim(request()->getBaseUrl(), '/');
     @endphp
     @if($viteAssets)
         @isset($viteAssets['resources/css/app.css']['file'])
             <link rel="stylesheet" href="{{ $viteBase }}/build/{{ $viteAssets['resources/css/app.css']['file'] }}">
+            @php
+                $criticalCssPath = $viteBuildPath.DIRECTORY_SEPARATOR.$viteAssets['resources/css/app.css']['file'];
+            @endphp
+            @if(is_file($criticalCssPath))
+                <style>{!! file_get_contents($criticalCssPath) !!}</style>
+            @endif
         @endisset
         @isset($viteAssets['resources/js/app.js']['file'])
             <script type="module" src="{{ $viteBase }}/build/{{ $viteAssets['resources/js/app.js']['file'] }}"></script>
