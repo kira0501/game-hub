@@ -4,6 +4,7 @@ set -euo pipefail
 cd /home/o/olivera9/gamehub67
 
 PHP_BIN="/usr/local/bin/php8.3"
+COMPOSER_BIN="/usr/local/bin/composer-php8.3"
 COMPOSER_PHAR="/usr/local/bin/composer-phar"
 
 if [ ! -x "$PHP_BIN" ]; then
@@ -25,7 +26,9 @@ mkdir -p bootstrap/cache \
 chmod -R u+rwX bootstrap/cache storage
 
 echo "3/8 Ставлю PHP-зависимости..."
-if [ -f "$COMPOSER_PHAR" ]; then
+if [ -x "$COMPOSER_BIN" ]; then
+    "$COMPOSER_BIN" install --no-dev --optimize-autoloader
+elif [ -f "$COMPOSER_PHAR" ]; then
     "$PHP_BIN" "$COMPOSER_PHAR" install --no-dev --optimize-autoloader
 else
     composer install --no-dev --optimize-autoloader
