@@ -55,6 +55,8 @@ class DatabaseSeeder extends Seeder
                 'slug' => Str::slug($data['title']),
                 'description' => $data['description'],
                 'cover' => $this->cover($data['appid'] ?? null, $index),
+                'hero_image' => $this->wideImage($data['appid'] ?? null, $index),
+                'carousel_image' => $this->wideImage($data['appid'] ?? null, $index),
                 'trailer_url' => $this->trailer($data['title']),
                 'developer' => $data['developer'],
                 'publisher' => $data['publisher'],
@@ -201,6 +203,24 @@ class DatabaseSeeder extends Seeder
         }
 
         return 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=900&q=80&sig='.$index;
+    }
+
+    private function wideImage(?int $appid, int $index): string
+    {
+        $knownWide = [
+            2483190 => 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2483190/library_hero.jpg',
+            3280350 => 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/3280350/9b523fd411eeaefe80f238489745325a1cd2317f/library_capsule_2x.jpg',
+        ];
+
+        if ($appid && isset($knownWide[$appid])) {
+            return $knownWide[$appid];
+        }
+
+        if ($appid) {
+            return "https://cdn.akamai.steamstatic.com/steam/apps/{$appid}/capsule_616x353.jpg";
+        }
+
+        return 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1600&q=80&sig='.$index;
     }
 
     private function trailer(string $title): string

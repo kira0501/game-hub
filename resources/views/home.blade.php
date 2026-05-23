@@ -5,14 +5,23 @@
     $placeholderWide = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1600&q=80';
     $placeholderCover = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=900&q=80';
     $galleryImages = fn ($game) => $game->media->where('type', 'image')->where('role', 'gallery')->values();
-    $mediaImage = fn ($game) => $game->hero_image
-        ?: $galleryImages($game)->first()?->url
-        ?: $game->cover
-        ?: $placeholderWide;
-    $carouselImage = fn ($game) => $game->carousel_image ?: $game->hero_image ?: $mediaImage($game);
+    $galleryUrls = fn ($game) => $galleryImages($game)->pluck('url')->filter()->all();
+    $displayWideImage = function ($game) use ($galleryUrls, $placeholderWide) {
+        $gallery = $galleryUrls($game);
+
+        foreach ([$game->carousel_image, $game->hero_image, $game->cover] as $candidate) {
+            if ($candidate && ! in_array($candidate, $gallery, true)) {
+                return $candidate;
+            }
+        }
+
+        return $placeholderWide;
+    };
+    $mediaImage = fn ($game) => $game->hero_image ?: $displayWideImage($game);
+    $carouselImage = fn ($game) => $displayWideImage($game);
     $coverImage = fn ($game) => $game->cover
         ?: $placeholderCover;
-    $heroBackgroundImage = fn ($game) => $game->hero_image ?: $game->carousel_image ?: $placeholderWide;
+    $heroBackgroundImage = fn ($game) => $displayWideImage($game);
     $mediaImages = fn ($game) => $galleryImages($game)
         ->reject(fn ($media) => in_array($media->url, array_filter([$game->cover, $game->hero_image, $game->carousel_image]), true))
         ->take(4)

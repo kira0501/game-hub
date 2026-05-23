@@ -15,11 +15,28 @@
     $recentTotal = $recentReviews->count();
     $recentPositive = $recentReviews->where('rating', '>=', 7)->count();
     $recentPercent = $recentTotal ? round($recentPositive / $recentTotal * 100) : $positivePercent;
-    $mediaItems = $game->media->where('role', 'gallery')->sortBy('sort_order')->values();
+    $displayOnlyImages = array_filter([$game->cover, $game->hero_image, $game->carousel_image]);
+    $rawMediaItems = $game->media->where('role', 'gallery')->sortBy('sort_order')->values();
+    $filteredMediaItems = $rawMediaItems
+        ->reject(fn ($media) => $media->type === 'image' && in_array($media->url, $displayOnlyImages, true))
+        ->values();
+    $mediaItems = $filteredMediaItems->where('type', 'image')->isNotEmpty()
+        ? $filteredMediaItems
+        : $rawMediaItems;
     $galleryImages = $mediaItems->where('type', 'image')->values();
-    $mainMediaImage = $game->hero_image ?: $galleryImages->first()?->url ?: $placeholderWide;
-    $sidebarImage = $game->carousel_image ?: $game->cover ?: $placeholderWide;
-    $heroBackground = $game->carousel_image ?: $game->hero_image ?: $placeholderWide;
+    $galleryUrls = $galleryImages->pluck('url')->filter()->all();
+    $displayImage = function (...$candidates) use ($galleryUrls, $placeholderWide) {
+        foreach ($candidates as $candidate) {
+            if ($candidate && ! in_array($candidate, $galleryUrls, true)) {
+                return $candidate;
+            }
+        }
+
+        return $placeholderWide;
+    };
+    $mainMediaImage = $galleryImages->first()?->url ?: $placeholderWide;
+    $sidebarImage = $displayImage($game->carousel_image, $game->cover, $game->hero_image);
+    $heroBackground = $displayImage($game->carousel_image, $game->hero_image, $game->cover);
     $visibleReviews = auth()->user()?->isAdmin() ? $game->reviews : $approvedReviews;
     $mediaImage = fn ($item) => $item->media->firstWhere('type', 'image')?->url
         ?: $item->cover
