@@ -7,23 +7,31 @@ use App\Models\Genre;
 use App\Models\Review;
 use App\Services\RecommendationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class MainController extends Controller
 {
     public function __invoke(Request $request, RecommendationService $recommendations)
     {
         $baseGameQuery = fn () => Game::active()->with(['genres', 'prices', 'media']);
-
-        return view('home', [
-            'carouselGames' => $baseGameQuery()
-                ->where(function ($query) {
+        $hasDisplayImages = Schema::hasColumn('games', 'carousel_image')
+            && Schema::hasColumn('games', 'hero_image');
+        $carouselGames = $baseGameQuery()
+            ->when($hasDisplayImages, function ($query) {
+                $query->where(function ($query) {
                     $query->whereNotNull('carousel_image')
                         ->orWhereNotNull('hero_image')
                         ->orWhereHas('media', fn ($media) => $media->where('type', 'image'));
-                })
-                ->inRandomOrder()
-                ->limit(6)
-                ->get(),
+                });
+            }, function ($query) {
+                $query->whereHas('media', fn ($media) => $media->where('type', 'image'));
+            })
+            ->inRandomOrder()
+            ->limit(6)
+            ->get();
+
+        return view('home', [
+            'carouselGames' => $carouselGames,
             'popularGames' => $baseGameQuery()->orderByDesc('user_score_avg')->limit(8)->get(),
             'newGames' => $baseGameQuery()->latest('release_date')->limit(8)->get(),
             'dealGames' => $baseGameQuery()

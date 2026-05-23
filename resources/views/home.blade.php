@@ -272,6 +272,14 @@
         height: 100%;
         object-fit: cover;
         display: block;
+        opacity: 1;
+        transform: scale(1);
+        transition: opacity .28s ease, transform .45s ease;
+    }
+
+    .steam-slide-image.is-swapping {
+        opacity: .18;
+        transform: scale(1.025);
     }
 
     .steam-slide-info {
@@ -500,11 +508,23 @@
 
             const mainImage = slide.querySelector('[data-main-slide-image]');
             if (mainImage && slide.dataset.defaultImage) {
-                mainImage.src = slide.dataset.defaultImage;
+                swapMainImage(mainImage, slide.dataset.defaultImage);
             }
 
             slide.dataset.lockedPreview = '';
             slide.querySelectorAll('.steam-thumb-button').forEach((item) => item.classList.remove('is-active'));
+        }
+
+        function swapMainImage(image, url) {
+            if (!image || !url || image.src === url) return;
+
+            image.classList.add('is-swapping');
+            window.setTimeout(() => {
+                image.src = url;
+                image.addEventListener('load', () => {
+                    image.classList.remove('is-swapping');
+                }, { once: true });
+            }, 120);
         }
 
         function previewThumb(thumb, shouldLock = false) {
@@ -514,7 +534,7 @@
 
             slide.querySelectorAll('.steam-thumb-button').forEach((item) => item.classList.remove('is-active'));
             thumb.classList.add('is-active');
-            mainImage.src = thumb.dataset.thumbUrl;
+            swapMainImage(mainImage, thumb.dataset.thumbUrl);
 
             if (shouldLock) {
                 slide.dataset.lockedPreview = thumb.dataset.thumbUrl;
@@ -529,7 +549,7 @@
                 if (!slide || !mainImage) return;
 
                 if (slide.dataset.lockedPreview) {
-                    mainImage.src = slide.dataset.lockedPreview;
+                    swapMainImage(mainImage, slide.dataset.lockedPreview);
                     slide.querySelectorAll('.steam-thumb-button').forEach((item) => {
                         item.classList.toggle('is-active', item.dataset.thumbUrl === slide.dataset.lockedPreview);
                     });

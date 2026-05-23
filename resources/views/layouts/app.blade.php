@@ -5,7 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Game Hub' }}</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @php
+        $viteManifest = public_path('build/manifest.json');
+        $viteAssets = is_file($viteManifest)
+            ? json_decode((string) file_get_contents($viteManifest), true)
+            : null;
+        $viteBase = rtrim(request()->getBaseUrl(), '/');
+    @endphp
+    @if($viteAssets)
+        @isset($viteAssets['resources/css/app.css']['file'])
+            <link rel="stylesheet" href="{{ $viteBase }}/build/{{ $viteAssets['resources/css/app.css']['file'] }}">
+        @endisset
+        @isset($viteAssets['resources/js/app.js']['file'])
+            <script type="module" src="{{ $viteBase }}/build/{{ $viteAssets['resources/js/app.js']['file'] }}"></script>
+        @endisset
+    @else
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @endif
 </head>
 <body class="flex min-h-screen flex-col bg-hub-bg">
     @php
