@@ -2,8 +2,11 @@
     RewriteEngine On
     DirectoryIndex index.php
 
-    RewriteCond %{DOCUMENT_ROOT}/laravel1/public/$1 -f [OR]
-    RewriteCond %{DOCUMENT_ROOT}/laravel1/public/$1 -d
+    RewriteRule ^(\.env|composer\.(json|lock)|package(-lock)?\.json|artisan|README\.md|VERCEL_DEPLOY\.md)$ - [F,L]
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|scripts|storage|tests|vendor)(/.*)?$ - [F,L]
+
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -d
     RewriteRule ^(.+)$ public/$1 [L]
 
     RewriteRule ^ index.php [L]
