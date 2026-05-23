@@ -26,12 +26,16 @@ mkdir -p bootstrap/cache \
 chmod -R u+rwX bootstrap/cache storage
 
 echo "3/8 Ставлю PHP-зависимости..."
-if [ -x "$COMPOSER_BIN" ]; then
+if [ -f vendor/autoload.php ]; then
+    echo "vendor/autoload.php уже есть, зависимости не изменялись — пропускаю Composer."
+elif [ -x "$COMPOSER_BIN" ] && "$COMPOSER_BIN" --version 2>/dev/null | grep -q "Composer version 2"; then
     "$COMPOSER_BIN" install --no-dev --optimize-autoloader
-elif [ -f "$COMPOSER_PHAR" ]; then
+elif [ -f "$COMPOSER_PHAR" ] && "$PHP_BIN" "$COMPOSER_PHAR" --version 2>/dev/null | grep -q "Composer version 2"; then
     "$PHP_BIN" "$COMPOSER_PHAR" install --no-dev --optimize-autoloader
 else
-    composer install --no-dev --optimize-autoloader
+    echo "Composer 2 на сервере не найден. Зависимости не установлены, vendor/autoload.php отсутствует."
+    echo "Нужно установить Composer 2 в Beget или загрузить папку vendor."
+    exit 1
 fi
 
 echo "4/8 Обновляю публичную папку сайта..."
