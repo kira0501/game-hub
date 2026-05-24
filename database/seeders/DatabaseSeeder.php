@@ -209,7 +209,7 @@ class DatabaseSeeder extends Seeder
     {
         $knownWide = [
             2483190 => 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2483190/library_hero.jpg',
-            3280350 => 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/3280350/9b523fd411eeaefe80f238489745325a1cd2317f/library_capsule_2x.jpg',
+            3280350 => 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3280350/702c9ed8dc25f26be07539cd5cfb9f08046d210a/ss_702c9ed8dc25f26be07539cd5cfb9f08046d210a.1920x1080.jpg?t=1774022345',
         ];
 
         if ($appid && isset($knownWide[$appid])) {

@@ -84,9 +84,9 @@
                             </div>
                         </article>
                     @endforeach
-                    <button type="button" data-carousel-prev class="steam-arrow steam-arrow-left" aria-label="Предыдущий слайд">‹</button>
-                    <button type="button" data-carousel-next class="steam-arrow steam-arrow-right" aria-label="Следующий слайд">›</button>
                 </div>
+                <button type="button" data-carousel-prev class="steam-arrow steam-arrow-left" aria-label="Предыдущий слайд">‹</button>
+                <button type="button" data-carousel-next class="steam-arrow steam-arrow-right" aria-label="Следующий слайд">›</button>
                 <div class="steam-dots">
                     @foreach($heroGames->take(6)->values() as $index => $game)
                         <button type="button" data-carousel-dot="{{ $index }}" class="{{ $index === 0 ? 'is-active' : '' }}" aria-label="Слайд {{ $index + 1 }}"></button>
@@ -387,12 +387,13 @@
 
     .steam-arrow {
         position: absolute;
-        top: 50%;
-        z-index: 50;
+        top: calc(50% + 8px);
+        z-index: 60;
         width: 48px;
         height: 78px;
         transform: translateY(-50%);
         border: 0;
+        border-radius: 2px;
         background: rgba(0, 0, 0, .58);
         color: #fff;
         font-size: 58px;
@@ -407,11 +408,11 @@
     }
 
     .steam-arrow-left {
-        left: 0;
+        left: -58px;
     }
 
     .steam-arrow-right {
-        right: 0;
+        right: -58px;
     }
 
     .steam-dots {
@@ -432,6 +433,16 @@
 
     .steam-dots button.is-active {
         background: #67e8f9;
+    }
+
+    @media (max-width: 1100px) {
+        .steam-arrow-left {
+            left: -12px;
+        }
+
+        .steam-arrow-right {
+            right: -12px;
+        }
     }
 
     @media (max-width: 760px) {
@@ -483,6 +494,14 @@
             width: 38px;
             height: 58px;
             font-size: 42px;
+        }
+
+        .steam-arrow-left {
+            left: 0;
+        }
+
+        .steam-arrow-right {
+            right: 0;
         }
 
         .steam-dots {
