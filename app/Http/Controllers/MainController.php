@@ -35,7 +35,17 @@ class MainController extends Controller
             'popularGames' => $baseGameQuery()->orderByDesc('user_score_avg')->limit(8)->get(),
             'newGames' => $baseGameQuery()->latest('release_date')->limit(8)->get(),
             'dealGames' => $baseGameQuery()
-                ->whereHas('prices', fn ($query) => $query->where('is_available', true)->where('price', '<=', 1000))
+                ->whereHas('prices', function ($query) {
+                    $query->where('is_available', true)
+                        ->whereNotNull('price')
+                        ->where(function ($query) {
+                            $query->where('discount_percent', '>', 0)
+                                ->orWhereColumn('price', '<', 'previous_price')
+                                ->orWhere('price', '<=', 1000);
+                        });
+                })
+                ->withMax('prices as best_discount_percent', 'discount_percent')
+                ->orderByDesc('best_discount_percent')
                 ->orderByDesc('user_score_avg')
                 ->limit(4)
                 ->get(),

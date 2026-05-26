@@ -125,12 +125,15 @@ GRAPHQL,
     {
         $oldPrice = $price->price !== null ? (float) $price->price : null;
         $changed = $oldPrice === null || abs($oldPrice - $newPrice) > 0.009;
+        $effectiveDiscount = $discountPercent > 0
+            ? $discountPercent
+            : $this->discountFromPrices($changed ? $oldPrice : (float) $price->previous_price, $newPrice);
 
         $price->fill([
             'previous_price' => $changed ? $oldPrice : $price->previous_price,
             'price' => $newPrice,
             'currency' => $currency,
-            'discount_percent' => $discountPercent,
+            'discount_percent' => $effectiveDiscount,
             'is_available' => $isAvailable,
             'price_changed_at' => $changed ? now() : $price->price_changed_at,
             'updated_at' => now(),
@@ -163,5 +166,14 @@ GRAPHQL,
     private function sameTitle(string $candidate, string $title): bool
     {
         return Str::of($candidate)->lower()->squish()->value() === Str::of($title)->lower()->squish()->value();
+    }
+
+    private function discountFromPrices(?float $oldPrice, float $newPrice): int
+    {
+        if (! $oldPrice || $oldPrice <= 0 || $newPrice >= $oldPrice) {
+            return 0;
+        }
+
+        return max(1, min(99, (int) round((1 - $newPrice / $oldPrice) * 100)));
     }
 }

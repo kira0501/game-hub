@@ -27,6 +27,7 @@
         ->take(4)
         ->values();
     $priceLabel = fn ($price) => $price ? ((float) $price->price === 0.0 ? 'Бесплатно' : number_format((float) $price->price, 0, '.', ' ') . ' ' . $price->currency) : 'Нет цены';
+    $oldPriceLabel = fn ($price) => $price && $price->previous_price ? number_format((float) $price->previous_price, 0, '.', ' ') . ' ' . $price->currency : null;
     $smartGame = $recommended->first()['game'] ?? $popularGames->first();
     $smartBest = $smartGame?->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first();
     $heroGames = ($carouselGames ?? collect())->isNotEmpty() ? $carouselGames : $popularGames;
@@ -165,10 +166,20 @@
                 @foreach($dealGames as $game)
                     @php
                         $best = $game->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first();
+                        $dealPrice = $game->prices
+                            ->where('is_available', true)
+                            ->whereNotNull('price')
+                            ->sortByDesc(fn ($price) => ($price->discount_percent ?? 0) * 100000 + ($price->price_dropped ? 10000 : 0))
+                            ->first() ?: $best;
+                        $dealBadge = $dealPrice?->discount_percent
+                            ? '-'.$dealPrice->discount_percent.'%'
+                            : ($dealPrice?->price_dropped ? 'Цена снизилась' : 'До 1000 RUB');
                     @endphp
-                    <a href="{{ route('games.show', $game->slug) }}" class="hub-panel group flex h-full min-h-[360px] flex-col overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-cyan-300/50 hover:shadow-[0_0_28px_rgba(34,211,238,0.22)]">
-                        <div class="h-44 overflow-hidden bg-slate-950">
-                            <img src="{{ $coverImage($game) }}" onerror="this.onerror=null;this.src='{{ $placeholderCover }}';" class="h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.03]" alt="{{ $game->title }}">
+                    <a href="{{ route('games.show', $game->slug) }}" class="hub-panel group flex h-full min-h-[430px] flex-col overflow-hidden transition-[border-color,box-shadow] duration-300 hover:border-cyan-300/50 hover:shadow-[0_0_28px_rgba(34,211,238,0.22)]">
+                        <div class="relative h-64 overflow-hidden bg-slate-950 sm:h-72 xl:h-64">
+                            <img src="{{ $coverImage($game) }}" onerror="this.onerror=null;this.src='{{ $placeholderCover }}';" class="h-full w-full object-cover object-top opacity-90 transition duration-500 group-hover:scale-[1.02] group-hover:opacity-100" alt="{{ $game->title }}">
+                            <span class="absolute left-3 top-3 rounded bg-cyan-400 px-2.5 py-1 text-xs font-black uppercase tracking-wide text-slate-950 shadow-lg shadow-black/30">{{ $dealBadge }}</span>
+                            <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-hub-panel via-transparent to-transparent opacity-80 transition duration-500 group-hover:opacity-45"></div>
                         </div>
                         <div class="flex flex-1 flex-col p-4">
                             <h3 class="min-h-12 text-base font-black leading-snug text-white">{{ $game->title }}</h3>
@@ -179,7 +190,15 @@
                             </div>
                             <div class="mt-4 border-t border-white/10 pt-4">
                                 <p class="text-xs uppercase tracking-widest text-slate-500">Лучшая цена</p>
-                                <p class="mt-1 text-2xl font-black text-cyan-300">{{ $priceLabel($best) }}</p>
+                                <div class="mt-1 flex flex-wrap items-end gap-2">
+                                    <p class="text-2xl font-black text-cyan-300">{{ $priceLabel($best) }}</p>
+                                    @if($oldPriceLabel($dealPrice))
+                                        <p class="pb-1 text-sm text-slate-500 line-through">{{ $oldPriceLabel($dealPrice) }}</p>
+                                    @endif
+                                </div>
+                                @if($dealPrice?->last_checked_at)
+                                    <p class="mt-1 text-xs text-slate-500">Обновлено {{ $dealPrice->last_checked_at->format('d.m.Y') }}</p>
+                                @endif
                             </div>
                             <span class="mt-auto pt-5 text-sm font-semibold text-cyan-300 group-hover:text-white">Смотреть игру</span>
                         </div>

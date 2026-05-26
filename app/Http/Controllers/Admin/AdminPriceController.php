@@ -26,17 +26,14 @@ class AdminPriceController extends Controller
     {
         $data = $request->validated();
 
-        GamePrice::updateOrCreate(
-            ['game_id' => $data['game_id'], 'store_id' => $data['store_id']],
-            [
-                'price' => $data['price'] ?? null,
-                'currency' => $data['currency'],
-                'is_available' => $request->boolean('is_available'),
-                'discount_percent' => $data['discount_percent'] ?? 0,
-                'external_url' => $data['external_url'] ?? null,
-                'updated_at' => now(),
-            ]
-        );
+        $price = GamePrice::firstOrNew(['game_id' => $data['game_id'], 'store_id' => $data['store_id']]);
+        $price->fill($this->pricePayload($price, [
+            'price' => $data['price'] ?? null,
+            'currency' => $data['currency'],
+            'is_available' => $request->boolean('is_available'),
+            'discount_percent' => $data['discount_percent'] ?? 0,
+            'external_url' => $data['external_url'] ?? null,
+        ]))->save();
 
         return redirect()->route('admin.prices.index')->with('status', 'Цена сохранена.');
     }
@@ -85,17 +82,47 @@ class AdminPriceController extends Controller
     private function saveStorePrices(Game $game, array $data): void
     {
         foreach ($data['prices'] ?? [] as $storeId => $priceData) {
-            GamePrice::updateOrCreate(
-                ['game_id' => $game->id, 'store_id' => $storeId],
-                [
-                    'price' => $priceData['price'] ?? null,
-                    'currency' => $priceData['currency'] ?? 'RUB',
-                    'discount_percent' => $priceData['discount_percent'] ?? 0,
-                    'is_available' => (bool) ($priceData['is_available'] ?? false),
-                    'external_url' => $priceData['external_url'] ?? null,
-                    'updated_at' => now(),
-                ]
-            );
+            $price = GamePrice::firstOrNew(['game_id' => $game->id, 'store_id' => $storeId]);
+            $price->fill($this->pricePayload($price, [
+                'price' => $priceData['price'] ?? null,
+                'currency' => $priceData['currency'] ?? 'RUB',
+                'discount_percent' => $priceData['discount_percent'] ?? 0,
+                'is_available' => (bool) ($priceData['is_available'] ?? false),
+                'external_url' => $priceData['external_url'] ?? null,
+            ]))->save();
         }
+    }
+
+    private function pricePayload(GamePrice $price, array $data): array
+    {
+        $oldPrice = $price->exists && $price->price !== null ? (float) $price->price : null;
+        $newPrice = $data['price'] !== null && $data['price'] !== '' ? (float) $data['price'] : null;
+        $changed = $newPrice !== null && ($oldPrice === null || abs($oldPrice - $newPrice) > 0.009);
+        $discount = (int) ($data['discount_percent'] ?? 0);
+
+        if ($discount <= 0 && $newPrice !== null) {
+            $referencePrice = $changed ? $oldPrice : ($price->previous_price !== null ? (float) $price->previous_price : null);
+            $discount = $this->discountFromPrices($referencePrice, $newPrice);
+        }
+
+        return [
+            'price' => $newPrice,
+            'previous_price' => $changed ? $oldPrice : $price->previous_price,
+            'currency' => $data['currency'] ?? 'RUB',
+            'discount_percent' => $discount,
+            'is_available' => (bool) ($data['is_available'] ?? false),
+            'external_url' => $data['external_url'] ?? null,
+            'price_changed_at' => $changed ? now() : $price->price_changed_at,
+            'updated_at' => now(),
+        ];
+    }
+
+    private function discountFromPrices(?float $oldPrice, float $newPrice): int
+    {
+        if (! $oldPrice || $oldPrice <= 0 || $newPrice >= $oldPrice) {
+            return 0;
+        }
+
+        return max(1, min(99, (int) round((1 - $newPrice / $oldPrice) * 100)));
     }
 }
