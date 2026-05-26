@@ -39,47 +39,55 @@ class RecommendationService
             ->map(function (Game $game) use ($favoriteGenres, $reviewedGenres, $pcConfig, $user) {
                 $score = 0;
                 $reasons = [];
+                $tags = [];
                 $gameGenreIds = $game->genres->pluck('id');
 
                 if ($gameGenreIds->intersect($favoriteGenres)->isNotEmpty()) {
                     $score += 40;
-                    $reasons[] = 'совпадает с жанрами из избранного';
+                    $reasons[] = 'Похожа на игры из избранного';
+                    $tags[] = 'жанры';
                 }
 
                 if ($gameGenreIds->intersect($reviewedGenres)->isNotEmpty()) {
                     $score += 25;
-                    $reasons[] = 'похожа на оцененные игры';
+                    $reasons[] = 'Близка к играм, которые вы оценивали';
+                    $tags[] = 'отзывы';
                 }
 
                 if ($game->user_score_avg >= 8.4) {
                     $score += 20;
-                    $reasons[] = 'высокая пользовательская оценка';
+                    $reasons[] = 'Высокая оценка игроков';
+                    $tags[] = 'рейтинг';
                 }
 
                 if ($pcConfig && $game->systemRequirement) {
                     $compatibility = $this->compatibilityService->check($game, $pcConfig);
                     if ($compatibility['compatible']) {
                         $score += $compatibility['level'] === 'recommended' ? 15 : 8;
-                        $reasons[] = 'подходит под ваш ПК';
+                        $reasons[] = $compatibility['level'] === 'recommended' ? 'Хорошо подходит под ваш ПК' : 'Должна запуститься на вашем ПК';
+                        $tags[] = 'ПК';
                     }
                 }
 
                 $bestPrice = $game->prices->where('is_available', true)->whereNotNull('price')->sortBy('price')->first();
                 if ($bestPrice && $bestPrice->price <= 1999 && $game->user_score_avg >= 8.0) {
                     $score += 10;
-                    $reasons[] = 'хорошая цена за рейтинг';
+                    $reasons[] = 'Хорошая цена для такой оценки';
+                    $tags[] = 'цена';
                 }
 
                 $approvedReviews = $game->reviews()->where('status', 'approved')->count();
                 if ($approvedReviews >= 3) {
                     $score += 5;
-                    $reasons[] = 'популярна среди игроков';
+                    $reasons[] = 'Есть активность игроков';
+                    $tags[] = 'популярно';
                 }
 
                 return [
                     'game' => $game,
                     'score' => $score,
-                    'reason' => implode(', ', array_unique($reasons)) ?: 'подходит по общему профилю каталога',
+                    'reason' => $this->mainReason($reasons),
+                    'tags' => array_values(array_unique($tags)),
                 ];
             })
             ->filter(fn ($item) => $item['score'] > 0)
@@ -116,8 +124,14 @@ class RecommendationService
             ->map(fn (Game $game) => [
                 'game' => $game,
                 'score' => (int) round($game->user_score_avg * 10),
-                'reason' => 'популярная игра с высокой оценкой и активным интересом игроков',
+                'reason' => 'Популярная игра с высокой оценкой',
+                'tags' => ['рейтинг', 'популярно'],
             ]);
+    }
+
+    private function mainReason(array $reasons): string
+    {
+        return array_values(array_unique($reasons))[0] ?? 'Подходит по общему профилю каталога';
     }
 
     private function sync(User $user, Collection $items): void

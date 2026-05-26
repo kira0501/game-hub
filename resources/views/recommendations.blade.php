@@ -35,7 +35,14 @@
                             <span class="rounded bg-cyan-400/15 px-2 py-1 text-sm font-black text-cyan-200">{{ $item['score'] }}</span>
                         </div>
                         <p class="mt-2 line-clamp-1 text-xs text-slate-400">{{ $game->genres->pluck('name')->join(' • ') }}</p>
-                        <p class="mt-4 text-sm leading-6 text-slate-300">{{ $item['reason'] }}</p>
+                        <p class="mt-4 line-clamp-2 text-sm leading-6 text-slate-300">{{ $item['reason'] }}</p>
+                        @if(!empty($item['tags']))
+                            <div class="mt-3 flex flex-wrap gap-1.5">
+                                @foreach(array_slice($item['tags'], 0, 4) as $tag)
+                                    <span class="rounded bg-cyan-400/10 px-2 py-1 text-xs font-semibold text-cyan-200">{{ $tag }}</span>
+                                @endforeach
+                            </div>
+                        @endif
                         <span class="mt-auto pt-4 text-sm font-semibold text-cyan-300">Открыть игру</span>
                     </div>
                 </a>

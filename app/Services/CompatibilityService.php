@@ -62,20 +62,35 @@ class CompatibilityService
     private function compareText(string $value, string $min, string $rec, string $label): array
     {
         $score = $this->hardwareScore($value);
+        $minScore = $this->requirementScore($min);
+        $recScore = $this->requirementScore($rec);
 
         return [
             'label' => $label,
             'value' => $value ?: 'Не указано',
             'minimum' => $min,
             'recommended' => $rec,
-            'min_pass' => $score >= $this->hardwareScore($min),
-            'recommended_pass' => $score >= $this->hardwareScore($rec),
+            'min_pass' => $value !== '' && $score >= $minScore,
+            'recommended_pass' => $value !== '' && $score >= $recScore,
         ];
+    }
+
+    private function requirementScore(string $value): int
+    {
+        $alternatives = preg_split('/\s+\/\s+|\s+or\s+|\s+или\s+/iu', $value) ?: [];
+        $scores = collect($alternatives)
+            ->map(fn ($item) => trim($item))
+            ->filter()
+            ->map(fn ($item) => $this->hardwareScore($item))
+            ->filter(fn ($score) => $score > 0);
+
+        return $scores->min() ?: $this->hardwareScore($value);
     }
 
     private function hardwareScore(string $value): int
     {
         $value = mb_strtolower($value);
+        $value = preg_replace('/\b(direct3d|shader|vs|ps|dd3d|d3d)\w*\b/i', ' ', $value) ?? $value;
 
         preg_match_all('/\d+/', $value, $numbers);
         $score = array_sum(array_map('intval', $numbers[0] ?? []));
