@@ -48,7 +48,10 @@
 <body class="min-h-screen bg-slate-950 text-slate-100">
     <div class="grid min-h-screen lg:grid-cols-[260px_1fr]">
         <aside class="border-r border-white/10 bg-slate-900/80 p-5">
-            <a href="{{ route('admin.dashboard') }}" class="text-2xl font-black text-cyan-300">Game Hub Admin</a>
+            <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 text-2xl font-black text-cyan-300">
+                <img src="{{ $assetBase }}/favicon.svg" alt="" class="h-10 w-10 rounded-md">
+                <span>Game Hub Admin</span>
+            </a>
             <nav class="mt-8 grid gap-2 text-sm">
                 <a class="rounded-md px-3 py-2 hover:bg-white/10" href="{{ route('admin.dashboard') }}">Dashboard</a>
                 <a class="rounded-md px-3 py-2 hover:bg-white/10" href="{{ route('admin.games.index') }}">Игры</a>

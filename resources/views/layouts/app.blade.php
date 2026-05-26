@@ -56,7 +56,10 @@
     @endphp
     <header class="sticky top-0 z-40 border-b border-white/10 bg-hub-bg/90 backdrop-blur">
         <div class="hub-container flex min-h-16 items-center gap-3 md:gap-4">
-            <a href="{{ route('home') }}" class="text-xl font-black tracking-wide text-cyan-300">Game Hub</a>
+            <a href="{{ route('home') }}" class="inline-flex items-center gap-2 text-xl font-black tracking-wide text-cyan-300">
+                <img src="{{ $assetBase }}/favicon.svg" alt="" class="h-10 w-10 rounded-md">
+                <span>Game Hub</span>
+            </a>
             <nav class="hidden items-center gap-4 text-sm text-slate-300 md:flex">
                 <a class="{{ $navClass(request()->routeIs('games.*') || request()->routeIs('genres.*')) }}" href="{{ route('games.index') }}">Каталог</a>
                 <a class="{{ $navClass(request()->routeIs('recommendations')) }}" href="{{ route('recommendations') }}">Рекомендации</a>
