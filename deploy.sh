@@ -43,6 +43,7 @@ rm -f public/hot public_html/hot
 rm -rf public_html/build
 cp -R public/build public_html/build
 cp public/index.php public_html/index.php
+cp public/favicon.svg public_html/favicon.svg
 
 cat > public_html/.htaccess <<'HTACCESS'
 AddHandler application/x-httpd-php83 .php

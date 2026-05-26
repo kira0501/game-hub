@@ -6,6 +6,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Game Hub' }}</title>
     @php
+        $assetBase = rtrim(request()->getBaseUrl(), '/');
+        if ($assetBase === '') {
+            $scriptName = str_replace('\\', '/', (string) request()->server('SCRIPT_NAME'));
+            $scriptBase = rtrim(str_replace('/index.php', '', $scriptName), '/');
+            $assetBase = $scriptBase === '' ? '' : $scriptBase;
+        }
         $viteManifest = collect([
             public_path('build/manifest.json'),
             base_path('public_html/build/manifest.json'),
@@ -37,6 +43,7 @@
     @else
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @endif
+    <link rel="icon" type="image/svg+xml" href="{{ $assetBase }}/favicon.svg">
 </head>
 <body class="flex min-h-screen flex-col bg-hub-bg">
     @php

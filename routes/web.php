@@ -20,6 +20,7 @@ use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', MainController::class)->name('home');
+Route::get('/favicon.svg', fn () => response()->file(public_path('favicon.svg')))->name('favicon');
 Route::get('/avatars/{filename}', [ProfileController::class, 'avatar'])
     ->where('filename', '[A-Za-z0-9._-]+')
     ->name('profile.avatar');
