@@ -28,6 +28,19 @@
                     <input name="prices[{{ $store->id }}][discount_percent]" type="number" min="0" max="100" value="{{ old("prices.{$store->id}.discount_percent", $price?->discount_percent ?? 0) }}" class="hub-input" placeholder="Скидка %">
                     <input name="prices[{{ $store->id }}][external_url]" value="{{ old("prices.{$store->id}.external_url", $price?->external_url) }}" class="hub-input md:col-span-1" placeholder="Ссылка">
                 </div>
+                @if($price)
+                    <div class="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
+                        @if($price->price_dropped)
+                            <span class="rounded bg-cyan-400/15 px-2 py-1 font-bold text-cyan-200">Цена снизилась с {{ number_format((float) $price->previous_price, 0, '.', ' ') }} {{ $price->currency }}</span>
+                        @endif
+                        @if($price->last_checked_at)
+                            <span class="rounded bg-white/5 px-2 py-1">Проверено {{ $price->last_checked_at->format('d.m.Y H:i') }}</span>
+                        @endif
+                        @if($price->auto_update_error)
+                            <span class="rounded bg-amber-400/15 px-2 py-1 text-amber-200">{{ $price->auto_update_error }}</span>
+                        @endif
+                    </div>
+                @endif
             </section>
         @endforeach
 

@@ -20,6 +20,9 @@ use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', MainController::class)->name('home');
+Route::get('/avatars/{filename}', [ProfileController::class, 'avatar'])
+    ->where('filename', '[A-Za-z0-9._-]+')
+    ->name('profile.avatar');
 
 Route::get('/games', [GameController::class, 'index'])->name('games.index');
 Route::get('/search/suggest', [GameController::class, 'suggest'])->name('search.suggest');

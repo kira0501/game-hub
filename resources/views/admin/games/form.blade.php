@@ -41,7 +41,7 @@
                 <label class="grid gap-1"><span class="hub-label">Загрузить обложку</span><input name="cover_file" type="file" accept="image/*" class="hub-input"></label>
                 <label class="grid gap-1"><span class="hub-label">Загрузить главное изображение</span><input name="hero_image_file" type="file" accept="image/*" class="hub-input"></label>
                 <label class="grid gap-1"><span class="hub-label">Загрузить изображение карусели</span><input name="carousel_image_file" type="file" accept="image/*" class="hub-input"></label>
-                <label class="grid gap-1 md:col-span-2"><span class="hub-label">Trailer embed URL / YouTube</span><input name="trailer_url" value="{{ old('trailer_url',$game->trailer_url) }}" class="hub-input"></label>
+                <label class="grid gap-1 md:col-span-2"><span class="hub-label">Rutube embed-код или ссылка трейлера</span><input name="trailer_url" value="{{ old('trailer_url',$game->trailer_url) }}" class="hub-input" placeholder="https://rutube.ru/play/embed/... или iframe-код"></label>
                 <label class="grid gap-1"><span class="hub-label">Загрузить видео</span><input name="video_files[]" type="file" accept="video/mp4,video/webm,video/ogg" multiple class="hub-input"></label>
                 <label class="grid gap-1 md:col-span-3"><span class="hub-label">Загрузить изображения галереи</span><input name="gallery_images[]" type="file" accept="image/*" multiple class="hub-input"></label>
                 <label class="grid gap-1 md:col-span-3"><span class="hub-label">URL галереи, каждый с новой строки</span><textarea name="gallery_urls" class="hub-input min-h-24" placeholder="https://...jpg&#10;https://...webp"></textarea></label>

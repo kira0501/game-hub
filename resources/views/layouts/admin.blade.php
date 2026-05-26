@@ -5,7 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Admin Game Hub' }}</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @php
+        $viteManifest = collect([
+            public_path('build/manifest.json'),
+            base_path('public_html/build/manifest.json'),
+        ])->first(fn ($path) => is_file($path));
+        $viteAssets = $viteManifest
+            ? json_decode((string) file_get_contents($viteManifest), true)
+            : null;
+        $viteBuildPath = $viteManifest ? dirname($viteManifest) : null;
+        $viteBase = rtrim(request()->getBaseUrl(), '/');
+        if ($viteBase === '') {
+            $scriptName = str_replace('\\', '/', (string) request()->server('SCRIPT_NAME'));
+            $scriptBase = rtrim(str_replace('/index.php', '', $scriptName), '/');
+            $viteBase = $scriptBase === '' ? '' : $scriptBase;
+        }
+    @endphp
+    @if($viteAssets)
+        @isset($viteAssets['resources/css/app.css']['file'])
+            <link rel="stylesheet" href="{{ $viteBase }}/build/{{ $viteAssets['resources/css/app.css']['file'] }}">
+            @php
+                $criticalCssPath = $viteBuildPath.DIRECTORY_SEPARATOR.$viteAssets['resources/css/app.css']['file'];
+            @endphp
+            @if(is_file($criticalCssPath))
+                <style>{!! file_get_contents($criticalCssPath) !!}</style>
+            @endif
+        @endisset
+        @isset($viteAssets['resources/js/app.js']['file'])
+            <script type="module" src="{{ $viteBase }}/build/{{ $viteAssets['resources/js/app.js']['file'] }}"></script>
+        @endisset
+    @else
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @endif
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100">
     <div class="grid min-h-screen lg:grid-cols-[260px_1fr]">

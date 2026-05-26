@@ -13,9 +13,23 @@
         @php
             $steam = $game->prices->first(fn ($price) => str_contains(strtolower($price->store->slug), 'steam'));
             $epic = $game->prices->first(fn ($price) => str_contains(strtolower($price->store->slug), 'epic'));
-            $formatPrice = fn ($price) => $price && $price->is_available && $price->price !== null
-                ? number_format((float) $price->price, 0, '.', ' ') . ' ' . $price->currency . ($price->discount_percent ? ' · -'.$price->discount_percent.'%' : '')
-                : 'Недоступно';
+            $formatPrice = function ($price) {
+                if (! $price || ! $price->is_available || $price->price === null) {
+                    return 'Недоступно';
+                }
+
+                $label = number_format((float) $price->price, 0, '.', ' ') . ' ' . $price->currency;
+
+                if ($price->discount_percent) {
+                    $label .= ' · -'.$price->discount_percent.'%';
+                }
+
+                if ($price->price_dropped) {
+                    $label .= ' · цена снизилась';
+                }
+
+                return $label;
+            };
         @endphp
         <div class="rounded-lg border border-white/10 bg-white/5 p-4">
             <div class="grid gap-4 md:grid-cols-[1fr_220px] md:items-center">

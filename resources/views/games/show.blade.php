@@ -117,7 +117,7 @@
         <div class="hub-panel p-3 md:p-4">
             <div id="game-media-viewer" class="space-y-3">
                 <div class="overflow-hidden rounded bg-black">
-                    <iframe id="media-main-video" class="hidden aspect-video w-full" src="" allowfullscreen></iframe>
+                    <iframe id="media-main-video" class="hidden aspect-video w-full" src="" allow="clipboard-write; autoplay; fullscreen" allowfullscreen></iframe>
                     <video id="media-main-file" class="hidden aspect-video w-full bg-black" src="" controls playsinline></video>
                     <img id="media-main-image" class="aspect-video w-full object-cover" src="{{ $mainMediaImage }}" alt="{{ $game->title }}">
                 </div>
@@ -331,7 +331,16 @@
                             @if(($row['discount_percent'] ?? 0) > 0)
                                 <span class="ml-2 rounded bg-lime-400/15 px-2 py-1 text-xs font-bold text-lime-300">-{{ $row['discount_percent'] }}%</span>
                             @endif
+                            @if($row['price_dropped'] ?? false)
+                                <span class="ml-2 rounded bg-cyan-400/15 px-2 py-1 text-xs font-bold text-cyan-200">Цена снизилась</span>
+                            @endif
                         </p>
+                        @if(($row['price_dropped'] ?? false) && $row['previous_price'])
+                            <p class="mt-1 text-xs text-slate-500">Было {{ number_format((float) $row['previous_price'], 0, '.', ' ') }} {{ $row['currency'] }}</p>
+                        @endif
+                        @if($row['last_checked_at'])
+                            <p class="mt-1 text-xs text-slate-500">Проверено {{ $row['last_checked_at']->format('d.m.Y H:i') }}</p>
+                        @endif
                         @if($row['external_url'])<a class="mt-2 inline-block text-sm text-cyan-300" href="{{ $row['external_url'] }}" target="_blank">Купить</a>@endif
                     </div>
                 @endforeach

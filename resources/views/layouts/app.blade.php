@@ -15,6 +15,11 @@
             : null;
         $viteBuildPath = $viteManifest ? dirname($viteManifest) : null;
         $viteBase = rtrim(request()->getBaseUrl(), '/');
+        if ($viteBase === '') {
+            $scriptName = str_replace('\\', '/', (string) request()->server('SCRIPT_NAME'));
+            $scriptBase = rtrim(str_replace('/index.php', '', $scriptName), '/');
+            $viteBase = $scriptBase === '' ? '' : $scriptBase;
+        }
     @endphp
     @if($viteAssets)
         @isset($viteAssets['resources/css/app.css']['file'])
@@ -140,10 +145,21 @@
             <div>
                 <h3 class="font-bold text-white">Контакты автора</h3>
                 <div class="mt-3 flex flex-wrap gap-3">
-                    <a href="https://t.me/KirillRagozin1" target="_blank" rel="noopener noreferrer" class="hub-btn-secondary">Telegram</a>
-                    <a href="https://www.instagram.com/i_kr67?igsh=dnVhcW0ybzQ1M25i&utm_source=qr" target="_blank" rel="noopener noreferrer" class="hub-btn-secondary">Instagram</a>
+                    <a href="https://vk.com/k.ragozin2k19" target="_blank" rel="noopener noreferrer" class="hub-btn-secondary group">
+                        <svg class="h-5 w-5 text-cyan-200 transition group-hover:text-white" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+                            <path d="M13.1 18.5C5.5 18.5 1.2 13.3 1 4.7h3.8c.1 6.3 2.9 8.9 5.1 9.5V4.7h3.6v5.4c2.2-.2 4.5-2.6 5.3-5.4h3.6c-.6 3.4-3.1 5.8-4.9 6.8 1.8.8 4.7 2.8 5.8 7h-4c-.9-2.7-2.9-4.7-5.8-5v5h-.4Z"/>
+                        </svg>
+                        <span>ВКонтакте</span>
+                    </a>
+                    <a href="https://max.ru/u/f9LHodD0cOLSVMHsv_ueylIaO22BChCnjoOOSRIkshNFTpkQe6GJDmXWEWM" target="_blank" rel="noopener noreferrer" class="hub-btn-secondary group">
+                        <svg class="h-5 w-5 text-cyan-200 transition group-hover:text-white" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+                            <path d="M5.2 17.8V6.2h2.7l4.1 5.6 4.1-5.6h2.7v11.6h-3V11l-3.1 4.1h-1.4L8.2 11v6.8h-3Z" fill="currentColor"/>
+                            <path d="M4 4.5h16M4 19.5h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>
+                        </svg>
+                        <span>MAX</span>
+                    </a>
                 </div>
-                <p class="mt-4 text-xs text-slate-500">Связаться с автором проекта можно через Telegram или Instagram.</p>
+                <p class="mt-4 text-xs text-slate-500">Связаться с автором проекта можно через ВКонтакте или мессенджер MAX.</p>
             </div>
         </div>
         <div class="border-t border-white/10 py-4">

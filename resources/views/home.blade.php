@@ -297,9 +297,11 @@
     .steam-slide-info {
         min-width: 0;
         height: 100%;
-        padding: 18px;
+        padding: 14px;
         display: flex;
         flex-direction: column;
+        position: relative;
+        overflow: hidden;
         background: linear-gradient(135deg, #101923 0%, #162333 52%, #071018 100%);
     }
 
@@ -323,22 +325,29 @@
 
     .steam-thumbs img {
         width: 100%;
-        height: 64px;
+        height: 54px;
         object-fit: cover;
         border-radius: 2px;
         opacity: .82;
     }
 
     .steam-copy {
-        margin-top: 18px;
+        margin-top: 14px;
+        padding-bottom: 58px;
+        min-height: 0;
+        overflow: hidden;
     }
 
     .steam-game-title {
         display: block;
         color: #fff;
-        font-size: 24px;
+        font-size: 21px;
         font-weight: 800;
-        line-height: 1.15;
+        line-height: 1.12;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .steam-game-title:hover {
@@ -357,14 +366,20 @@
     .steam-game-description {
         margin-top: 14px;
         color: #d4dde8;
-        font-size: 14px;
+        font-size: 13px;
         line-height: 1.45;
-        max-height: 62px;
+        max-height: 38px;
         overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
     }
 
     .steam-slide-bottom {
-        margin-top: auto;
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 14px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -486,7 +501,7 @@
 
         .steam-game-description {
             margin-top: 10px;
-            max-height: 58px;
+            max-height: 38px;
             font-size: 13px;
         }
 
@@ -494,14 +509,16 @@
             width: 38px;
             height: 58px;
             font-size: 42px;
+            top: 132px;
+            background: rgba(0, 0, 0, .68);
         }
 
         .steam-arrow-left {
-            left: 0;
+            left: 8px;
         }
 
         .steam-arrow-right {
-            right: 0;
+            right: 8px;
         }
 
         .steam-dots {

@@ -34,8 +34,14 @@
                             @foreach($row['prices'] as $price)
                                 <div class="flex items-center justify-between rounded bg-white/5 px-3 py-2 text-sm">
                                     <span class="{{ $price['is_best'] ? 'text-cyan-200' : 'text-slate-300' }}">{{ $price['store'] }}</span>
-                                    <span class="font-bold text-white">
-                                        {{ $priceLabel($price) }}
+                                    <span class="text-right font-bold text-white">
+                                        <span>{{ $priceLabel($price) }}</span>
+                                        @if(($price['discount_percent'] ?? 0) > 0)
+                                            <span class="ml-1 rounded bg-lime-400/15 px-1.5 py-0.5 text-xs text-lime-300">-{{ $price['discount_percent'] }}%</span>
+                                        @endif
+                                        @if($price['price_dropped'] ?? false)
+                                            <span class="mt-1 block text-xs text-cyan-200">цена снизилась</span>
+                                        @endif
                                     </span>
                                 </div>
                             @endforeach

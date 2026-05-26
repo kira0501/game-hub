@@ -6,14 +6,30 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminGameRequest;
 use App\Models\Game;
 use App\Models\Genre;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class AdminGameController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $query = Game::query()
+            ->with('genres')
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $term = '%'.(string) $request->string('q').'%';
+
+                $query->where(function ($query) use ($term) {
+                    $query->where('title', 'like', $term)
+                        ->orWhere('slug', 'like', $term)
+                        ->orWhere('developer', 'like', $term)
+                        ->orWhere('publisher', 'like', $term)
+                        ->orWhereHas('genres', fn ($genre) => $genre->where('name', 'like', $term));
+                });
+            })
+            ->latest();
+
         return view('admin.games.index', [
-            'games' => Game::with('genres')->latest()->paginate(15),
+            'games' => $query->paginate(15)->withQueryString(),
         ]);
     }
 
@@ -82,6 +98,10 @@ class AdminGameController extends Controller
             'controller_support',
         ]);
 
+        if ($base->has('trailer_url')) {
+            $base['trailer_url'] = $this->normalizeMediaUrl((string) $base['trailer_url']);
+        }
+
         foreach ([
             'cover_file' => 'cover',
             'hero_image_file' => 'hero_image',
@@ -146,26 +166,59 @@ class AdminGameController extends Controller
         }
 
         foreach (preg_split('/\R+/', (string) $request->input('gallery_urls')) as $url) {
-            $url = trim($url);
+            $url = $this->normalizeMediaUrl(trim($url));
             if ($url === '') {
                 continue;
             }
 
             $game->media()->create([
-                'type' => preg_match('/\.(mp4|webm|ogg)(\?|$)/i', $url) || str_contains($url, 'youtube.com') || str_contains($url, 'youtu.be') ? 'video' : 'image',
+                'type' => $this->isVideoUrl($url) ? 'video' : 'image',
                 'role' => 'gallery',
                 'url' => $url,
                 'sort_order' => ++$order,
             ]);
         }
 
-        if ($request->filled('trailer_url') && ! $game->media()->where('url', $request->input('trailer_url'))->exists()) {
+        $trailerUrl = $this->normalizeMediaUrl((string) $request->input('trailer_url'));
+
+        if ($trailerUrl !== '' && ! $game->media()->where('url', $trailerUrl)->exists()) {
             $game->media()->create([
                 'type' => 'video',
                 'role' => 'gallery',
-                'url' => $request->input('trailer_url'),
+                'url' => $trailerUrl,
                 'sort_order' => ++$order,
             ]);
         }
+    }
+
+    private function normalizeMediaUrl(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (preg_match('/<iframe\b[^>]*\bsrc=["\']([^"\']+)["\']/i', $value, $matches)) {
+            $value = html_entity_decode($matches[1]);
+        }
+
+        if (preg_match('~rutube\.ru/video/([A-Za-z0-9_-]+)~i', $value, $matches)) {
+            return 'https://rutube.ru/play/embed/'.$matches[1];
+        }
+
+        if (preg_match('~rutube\.ru/play/embed/([A-Za-z0-9_-]+)~i', $value, $matches)) {
+            return 'https://rutube.ru/play/embed/'.$matches[1];
+        }
+
+        return $value;
+    }
+
+    private function isVideoUrl(string $url): bool
+    {
+        return preg_match('/\.(mp4|webm|ogg)(\?|$)/i', $url)
+            || str_contains($url, 'rutube.ru/play/embed/')
+            || str_contains($url, 'youtube.com')
+            || str_contains($url, 'youtu.be');
     }
 }

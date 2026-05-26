@@ -34,7 +34,7 @@ class AdminGameRequest extends FormRequest
             'video_files.*' => ['file', 'mimetypes:video/mp4,video/webm,video/ogg', 'max:51200'],
             'remove_media' => ['nullable', 'array'],
             'remove_media.*' => ['integer', 'exists:game_media,id'],
-            'trailer_url' => ['nullable', 'string', 'max:500'],
+            'trailer_url' => ['nullable', 'string', 'max:1200'],
             'developer' => ['nullable', 'string', 'max:150'],
             'publisher' => ['nullable', 'string', 'max:150'],
             'release_date' => ['nullable', 'date'],
