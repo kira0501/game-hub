@@ -61,8 +61,10 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', AdminDashboardController::class)->name('dashboard');
+    Route::patch('games/{game}/toggle-active', [AdminGameController::class, 'toggleActive'])->name('games.toggle-active');
     Route::resource('games', AdminGameController::class)->except('show');
     Route::resource('genres', AdminGenreController::class)->except('show');
+    Route::patch('users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('users.toggle-status');
     Route::resource('users', AdminUserController::class)->except('show');
     Route::resource('stores', AdminStoreController::class)->except('show');
     Route::get('prices/games/{game}/edit', [AdminPriceController::class, 'editGame'])->name('prices.games.edit');

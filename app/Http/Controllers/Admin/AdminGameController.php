@@ -80,6 +80,13 @@ class AdminGameController extends Controller
         return back()->with('status', 'Игра удалена.');
     }
 
+    public function toggleActive(Game $game)
+    {
+        $game->update(['is_active' => ! $game->is_active]);
+
+        return back()->with('status', $game->is_active ? 'Игра снова отображается в каталоге.' : 'Игра скрыта из каталога.');
+    }
+
     private function gameData(array $data): array
     {
         $base = collect($data)->only([

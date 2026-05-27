@@ -19,12 +19,56 @@
 </form>
 
 <div class="mt-6 overflow-hidden rounded-lg border border-white/10">
-    <table class="w-full text-left text-sm"><thead class="bg-white/10"><tr><th class="p-3">Название</th><th class="p-3">Жанры</th><th class="p-3">Оценка</th><th class="p-3">Статус</th><th class="p-3"></th></tr></thead><tbody class="divide-y divide-white/10">
-        @forelse($games as $game)<tr><td class="p-3 font-bold">{{ $game->title }}</td><td class="p-3 text-slate-400">{{ $game->genres->pluck('name')->join(', ') }}</td><td class="p-3">{{ $game->user_score_avg }}</td><td class="p-3">{{ $game->is_active ? 'Активна' : 'Скрыта' }}</td><td class="p-3 flex gap-2"><a class="text-cyan-300" href="{{ route('admin.games.edit',$game) }}">Ред.</a><form method="POST" action="{{ route('admin.games.destroy',$game) }}">@csrf @method('DELETE')<button class="text-red-300">Удал.</button></form></td></tr>
+    <table class="w-full text-left text-sm">
+        <thead class="bg-white/10">
+            <tr>
+                <th class="p-3">Название</th>
+                <th class="p-3">Жанры</th>
+                <th class="p-3">Оценка</th>
+                <th class="p-3">Статус</th>
+                <th class="p-3"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-white/10">
+        @forelse($games as $game)
+            <tr class="align-middle">
+                <td class="p-3 font-bold">{{ $game->title }}</td>
+                <td class="p-3 text-slate-400">{{ $game->genres->pluck('name')->join(', ') ?: 'Без жанров' }}</td>
+                <td class="p-3">{{ $game->user_score_avg }}</td>
+                <td class="p-3">
+                    <span @class([
+                        'inline-flex rounded-md px-2.5 py-1 text-xs font-bold',
+                        'bg-cyan-400/15 text-cyan-200' => $game->is_active,
+                        'bg-amber-400/15 text-amber-200' => ! $game->is_active,
+                    ])>
+                        {{ $game->is_active ? 'Активна' : 'Скрыта' }}
+                    </span>
+                </td>
+                <td class="p-3">
+                    <div class="flex flex-wrap justify-end gap-2">
+                        <a class="rounded-md bg-cyan-500 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300" href="{{ route('admin.games.edit', $game) }}">Редактировать</a>
+
+                        <form method="POST" action="{{ route('admin.games.toggle-active', $game) }}">
+                            @csrf
+                            @method('PATCH')
+                            <button class="rounded-md bg-amber-400 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-amber-300">
+                                {{ $game->is_active ? 'Скрыть' : 'Показать' }}
+                            </button>
+                        </form>
+
+                        <form method="POST" action="{{ route('admin.games.destroy', $game) }}" onsubmit="return confirm('Удалить игру {{ addslashes($game->title) }} окончательно? Лучше использовать кнопку Скрыть, если игру нужно просто убрать из каталога.');">
+                            @csrf
+                            @method('DELETE')
+                            <button class="rounded-md bg-red-500 px-3 py-2 text-sm font-bold text-white transition hover:bg-red-400">Удалить</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
         @empty
             <tr><td colspan="5" class="p-6 text-center text-slate-400">Игры не найдены.</td></tr>
         @endforelse
-    </tbody></table>
+        </tbody>
+    </table>
 </div>
 <div class="mt-6">{{ $games->links() }}</div>
 @endsection

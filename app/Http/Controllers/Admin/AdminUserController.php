@@ -55,4 +55,15 @@ class AdminUserController extends Controller
 
         return back()->with('status', 'Пользователь удален.');
     }
+
+    public function toggleStatus(User $user)
+    {
+        abort_if(auth()->id() === $user->id, 422, 'Нельзя заблокировать самого себя.');
+
+        $user->update([
+            'status' => $user->status === 'active' ? 'blocked' : 'active',
+        ]);
+
+        return back()->with('status', $user->status === 'active' ? 'Пользователь разблокирован.' : 'Пользователь заблокирован.');
+    }
 }
